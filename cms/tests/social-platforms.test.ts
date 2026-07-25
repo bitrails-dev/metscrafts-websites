@@ -50,7 +50,8 @@ test('platformLabel returns the ar/en label', () => {
 // Parity with the public Astro normalizer — the one place the platform list is duplicated across a
 // runtime boundary. Reads the source text so no Astro/vite runtime is needed.
 test('frontend src/lib/tenant.ts defines a <key>Url social field for every CMS platform', () => {
-  const frontend = resolve(process.cwd(), '../src/lib/tenant.ts')
+  // After the pnpm-workspace restructure (f4d93c7), the Astro app lives under /astro.
+  const frontend = resolve(process.cwd(), '../astro/src/lib/tenant.ts')
   const src = readFileSync(frontend, 'utf8')
   for (const key of ALL_PLATFORMS) {
     assert.match(src, new RegExp(`${key}Url\\s*\\??:`), `frontend must define social.${key}Url for platform "${key}"`)

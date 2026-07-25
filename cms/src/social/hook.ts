@@ -9,12 +9,21 @@ import { shouldQueueArticle } from './decide'
 import { SOCIAL_PUBLISH_TASK_SLUG, SOCIAL_QUEUE } from './jobs'
 import type { Platform } from './types'
 
+// `doc.tenant` / `data.tenant` may arrive as a bare id (API input) OR a populated object (Payload
+// populates relationships on the afterChange doc). Extract the stable id in both shapes — otherwise
+// passing the populated object to findByID({ id }) fails the query, the .catch(()=>null) swallows it,
+// and the publish job is silently never enqueued. This is the one path the mocked unit tests miss.
+const tenantIdOf = (v: unknown): number | string | undefined => {
+  if (v === undefined || v === null) return undefined
+  return typeof v === 'object' ? (v as { id?: number | string }).id : (v as number | string)
+}
+
 export const defaultAutoPublishFromTenant: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation !== 'create') return data
   const incoming = data as Record<string, unknown>
   if (incoming.autoPublish !== undefined) return data // explicit (including false) is preserved
-  const tenantId = incoming.tenant
-  if (tenantId === undefined || tenantId === null) return data
+  const tenantId = tenantIdOf(incoming.tenant)
+  if (tenantId === undefined) return data
   const tenant = await req.payload.findByID({
     collection: 'tenants',
     id: tenantId as number | string,
@@ -31,8 +40,8 @@ export const queueSocialPublish: CollectionAfterChangeHook = async ({ doc, opera
   if (operation !== 'create') return doc
   if ((context as { skipSocial?: boolean } | undefined)?.skipSocial) return doc
   const article = doc as Record<string, unknown>
-  const tenantId = article.tenant
-  if (tenantId === undefined || tenantId === null) return doc
+  const tenantId = tenantIdOf(article.tenant)
+  if (tenantId === undefined) return doc
   if (!article.autoPublish) return doc // explicit/defaulted false → never enqueue
 
   try {

@@ -42,6 +42,16 @@ test('create with eligible targets → enqueues exactly one job on the social-pu
   assert.deepEqual(queued[0].input, { tenantId: 7, articleId: 5, platforms: ['facebook'] })
 })
 
+// Payload populates relationships on the afterChange doc, so doc.tenant arrives as an OBJECT, not a
+// bare id. The hook must normalize it — otherwise findByID({ id: <object> }) fails, .catch(()=>null)
+// swallows it, and the job is silently never enqueued (the integration test reproduces the real path).
+test('doc.tenant populated as an object (real afterChange shape) → still enqueues with the numeric id', async () => {
+  const { req, queued } = eligible()
+  await run({ doc: { ...baseArticle, tenant: { id: 7, name: 'Demo Hospital' } }, operation: 'create', req })
+  assert.equal(queued.length, 1)
+  assert.deepEqual(queued[0].input, { tenantId: 7, articleId: 5, platforms: ['facebook'] })
+})
+
 test('update → enqueues zero jobs', async () => {
   const { req, queued } = eligible()
   await run({ doc: { ...baseArticle }, operation: 'update', req })
