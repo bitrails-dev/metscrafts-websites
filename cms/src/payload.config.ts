@@ -86,6 +86,10 @@ import { GiftCardLedger } from './commerce/policies/collections/GiftCardLedger'
 // default registry, so each of the eight platforms resolves to a typed adapter with an explicit
 // outcome — no generic missing-adapter fallback.
 import './social/adapters/register'
+// Dev-only mock provider (SOCIAL_DEV_MOCK=1): overrides the real adapters + OAuth providers so the
+// full connect→publish flow works with no real provider apps. Imported AFTER register so the mock
+// adapters win the registry. No-op when the flag is off. See src/social/dev-mock.ts.
+import { devMockEndpoints } from './social/dev-mock'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -172,7 +176,7 @@ export default buildConfig({
   globals: [],
   // OAuth connect/callback/disconnect for tenant social connections (tenant-access-controlled), plus
   // the commerce payment webhook routes (source of truth for payment status).
-  endpoints: [...socialEndpoints, ...commerceWebhookEndpoints, ...commerceStoreEndpoints],
+  endpoints: [...socialEndpoints, ...devMockEndpoints, ...commerceWebhookEndpoints, ...commerceStoreEndpoints],
   // Durable social-publishing. The Article create hook enqueues the `social-publish-article` task;
   // a worker process (`payload jobs:run`) drains it with bounded exponential retry. Exclusive
   // per-article concurrency requires enableConcurrencyControl (adds an indexed concurrencyKey).

@@ -25,6 +25,23 @@ callback round-trip in a sandbox.
 > Tokens are AES-256-GCM encrypted at rest (key derived from `PAYLOAD_SECRET`). Plaintext never
 > reaches clients or logs. OAuth state is HMAC-signed, expiring, one-time.
 
+## Local mock (no provider apps needed)
+
+For dev/demo, set `SOCIAL_DEV_MOCK=1` in `cms/.env`. Every tier-1 platform is then stubbed by an
+in-memory mock (`cms/src/social/dev-mock.ts`): **Connect** becomes a one-click instant round-trip (no
+approval page, no network), and `publish()` records each post to an in-memory feed instead of calling
+a real API. The durable job + connection panel then show a real-looking `published` result, so you can
+exercise the whole flow before any provider app exists.
+
+1. `cms/.env`: `SOCIAL_DEV_MOCK=1` (leave the real `SOCIAL_*_CLIENT_*` blank).
+2. `cd cms && pnpm dev`.
+3. As a tenant admin: enable `socialPublishing`, pick `includedPlatforms`, click **Connect** on a platform → returns `connected`.
+4. Create an Article with `autoPublish` on → within ~1 min (the `autoRun` cron) the job runs and the
+   connection shows `last: published`. View the mock posts: `GET http://localhost:3001/api/social/dev/feed`.
+5. Clear the feed: `DELETE http://localhost:3001/api/social/dev/feed`.
+
+The feed is in-memory and resets on restart. **Never enable `SOCIAL_DEV_MOCK` in production.**
+
 ## Environment (see `cms/.env.example`)
 ```
 PAYLOAD_SECRET=<long random>          # derives the token + state keys
