@@ -8,7 +8,9 @@ export const Media: CollectionConfig = {
   },
   access: { read: () => true },
   upload: {
-    staticDir: '../public/uploads',
+    // Monorepo layout: uploads live in the astro app's public dir (Astro serves them statically
+    // at /uploads/…). Resolved from the cms CWD (cms/), this is ../astro/public/uploads.
+    staticDir: '../astro/public/uploads',
     mimeTypes: ['image/*'],
   },
   fields: [

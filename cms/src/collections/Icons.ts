@@ -17,7 +17,9 @@ export const Icons: CollectionConfig = {
     delete: ({ req }) => isSuperAdmin(req.user),
   },
   upload: {
-    staticDir: '../public/uploads/icons',
+    // Monorepo layout: icons live in the astro app's public dir (../astro/public/uploads/icons
+    // from the cms CWD). See Media.ts — same shared uploads directory.
+    staticDir: '../astro/public/uploads/icons',
     mimeTypes: ['image/svg+xml'],
   },
   fields: [

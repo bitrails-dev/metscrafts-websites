@@ -76,11 +76,3 @@ CMS (`cms/.env.example`): `PAYLOAD_SECRET`, `DATABASE_URI` (default `file:./cms.
 ### Issue tracker
 
 Issues are tracked in GitHub Issues; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The canonical default triage-label vocabulary is used. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This repository uses a multi-context layout. See `docs/agents/domain.md`.

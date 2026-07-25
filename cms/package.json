@@ -1,9 +1,15 @@
 {
-	"name": "codex-cms",
+	"name": "@bitrails-works/cms",
 	"version": "1.0.0",
 	"description": "Payload CMS for the hospital site. Authors content, exports markdown to ../src/content for Astro.",
 	"private": true,
 	"type": "module",
+	"exports": {
+		"./config": {
+			"types": "./src/payload.config.ts",
+			"default": "./src/payload.config.ts"
+		}
+	},
 	"scripts": {
 		"dev": "next dev -p 3001",
 		"build": "next build",
@@ -22,11 +28,11 @@
 	"dependencies": {
 		"@libsql/client": "^0.14.0",
 		"@payloadcms/db-sqlite": "3.85.1",
-		"@payloadcms/email-nodemailer": "^3.85.1",
+		"@payloadcms/email-nodemailer": "3.85.1",
 		"@payloadcms/next": "3.85.1",
-		"@payloadcms/plugin-ecommerce": "^3.85.1",
+		"@payloadcms/plugin-ecommerce": "3.85.1",
 		"@payloadcms/plugin-multi-tenant": "3.85.1",
-		"@payloadcms/plugin-search": "^3.85.1",
+		"@payloadcms/plugin-search": "3.85.1",
 		"@payloadcms/richtext-lexical": "3.85.1",
 		"@payloadcms/translations": "3.85.1",
 		"dotenv": "^16.4.7",

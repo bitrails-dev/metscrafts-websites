@@ -1,4 +1,12 @@
+packages:
+  - astro
+  - cms
+
+# pnpm 11 build-approval gate — pre-approve the native deps both projects need.
 allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+# If C: drive is tight on space on this machine — keep the content-addressable store on D:.
+# storeDir: D:\.pnpm-store

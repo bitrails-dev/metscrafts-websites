@@ -334,6 +334,9 @@ export default buildConfig({
   ],
   db: sqliteAdapter({
     client: {
+      // CWD-relative for the Next CMS (runs from cms/). NOTE: when Astro imports this config,
+      // Vite relocates it into the build output, so `import.meta.url`-based defaults DON'T survive
+      // bundling. The Astro app MUST set DATABASE_URI in its runtime env (e.g. file:../cms/cms.db).
       url: process.env.DATABASE_URI || 'file:./cms.db',
       authToken: process.env.DATABASE_AUTH_TOKEN,
     },

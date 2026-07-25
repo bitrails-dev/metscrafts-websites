@@ -1,34 +1,14 @@
 {
-  "name": "codex",
-  "version": "1.0.0",
-  "description": "Public hospital showcase website (Astro + Vue islands)",
-  "private": true,
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "type": "module",
-  "dependencies": {
-    "@astrojs/node": "^11.0.0",
-    "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/tailwind": "^6.0.2",
-    "@astrojs/vue": "^7.0.0",
-    "@lucide/vue": "^1.21.0",
-    "@vueuse/core": "^14.2.1",
-    "@vueuse/motion": "^3.0.3",
-    "astro": "^7.0.3",
-    "gsap": "^3.14.2",
-    "pinia": "^3.0.4",
-    "tailwindcss-rtl": "^0.9.0",
-    "vue": "^3.5.31",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.19"
-  },
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b"
+	"name": "bitrails-works",
+	"version": "1.0.0",
+	"private": true,
+	"packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
+	"scripts": {
+		"dev": "$env:CMS_MODE=\"api\"; pnpm --filter @bitrails-works/astro dev",
+		"dev:in-process": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=in-process astro dev",
+		"dev:api": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=api astro dev",
+		"build": "pnpm --filter @bitrails-works/astro build",
+		"preview": "pnpm --filter @bitrails-works/astro preview",
+		"dev:cms": "pnpm --filter @bitrails-works/cms dev"
+	}
 }
