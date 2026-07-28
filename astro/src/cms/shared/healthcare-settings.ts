@@ -1,17 +1,17 @@
 // Shared view-model + normalizer for the tenant-scoped `healthcare-settings` collection. Both CMS
 // backends (REST + in-process) fetch raw docs and route them through here, so public-site components
-// see one stable shape: four named hero stats (localized {value, valueAr, unit, unitAr}) and an
+// see one stable shape: four named hero stats (each a localized {value, unit} map pair) and an
 // emergency number. Raw Payload documents are never exposed to components.
 //
 // At most one healthcare-settings document exists per tenant (UNIQUE(tenant_id) + singlePerTenant
 // hook). normalizeDocs returns undefined for zero rows and throws for more than one — a uniqueness
 // violation must be repaired, not silently deduped.
 
+import { toLocalizedMap } from "../../i18n";
+
 export interface LocalizedStat {
-  value: string;
-  valueAr: string;
-  unit: string;
-  unitAr: string;
+  value: Record<string, string>;
+  unit: Record<string, string>;
 }
 
 export interface HealthcareSettings {
@@ -24,17 +24,13 @@ export interface HealthcareSettings {
   };
 }
 
-// A localized field comes back as { en, ar } under locale=all; a plain string is treated as English
-// (matches the loc() helper used elsewhere in the CMS layer).
-function pair(f: any): [string, string] {
-  if (f && typeof f === "object" && !Array.isArray(f)) return [String(f.en ?? ""), String(f.ar ?? "")];
-  return [String(f ?? ""), ""];
-}
-
+// A localized field comes back as { en, ar, … } under locale=all&fallback-locale=none; a plain
+// string is treated as a single-locale value. toLocalizedMap filters empties and returns the map.
 function stat(group: any): LocalizedStat {
-  const [value, valueAr] = pair(group?.value);
-  const [unit, unitAr] = pair(group?.unit);
-  return { value, valueAr, unit, unitAr };
+  return {
+    value: toLocalizedMap(group?.value),
+    unit: toLocalizedMap(group?.unit),
+  };
 }
 
 // Map a single raw healthcare-settings document to the view model.

@@ -8,6 +8,13 @@
 // REST endpoint and points the logo at the CMS origin.
 import { getTenants, imageUrl } from "../cms";
 import type { HealthcareSettings } from "../cms/shared/healthcare-settings";
+import {
+  toLocalizedMap,
+  pickLocalized,
+  LOCALES,
+  FALLBACK_LANGUAGES,
+  type Locale,
+} from "../i18n";
 
 export type TenantFeature =
   | "departments" | "team" | "articles" | "events"
@@ -18,33 +25,52 @@ export interface Tenant {
   id: number | string;
   slug: string;
   type: string;
-  name: string; nameAr: string;
+  name: Record<string, string>;
   domains: string[];
   features: TenantFeature[];
+  // Per-tenant enabled languages (subset of LOCALES, de-duplicated without reordering) and the
+  // tenant's chosen default. Both drive routing + pickLocalized fallbacks downstream.
+  languages: Locale[];
+  defaultLanguage: Locale;
   initials?: string;
-  tagline?: string; taglineAr?: string;
-  established?: string; establishedAr?: string;
+  tagline?: Record<string, string>;
+  established?: Record<string, string>;
   logo?: string;
   themeColor?: string;
   contact: {
     phone?: string; whatsapp?: string; email?: string;
-    address?: string; addressAr?: string;
+    address?: Record<string, string>;
+    // Social URLs stay flat — they are not localized display strings (BLK-3 §2.2).
     social?: {
       facebookUrl?: string; instagramUrl?: string; xUrl?: string; threadsUrl?: string;
       snapchatUrl?: string; youtubeUrl?: string; linkedinUrl?: string; tiktokUrl?: string;
     };
-    hours?: Array<{ day: string; dayAr: string; time: string; timeAr: string }>;
+    hours?: Array<{ day: Record<string, string>; time: Record<string, string> }>;
   };
 }
 
-function loc(f: any): [string, string] {
-  if (f && typeof f === "object" && !Array.isArray(f)) return [f.en ?? "", f.ar ?? ""];
-  return [String(f ?? ""), ""];
-}
 function str(f: any): string | undefined {
   if (f == null) return undefined;
   const v = typeof f === "object" ? (f.en ?? f.ar) : f;
   return v == null ? undefined : String(v);
+}
+
+// Normalize the tenant's enabled-languages array. Filter every raw entry through the catalogue
+// (LOCALES), de-duplicate without reordering, and only fall back to FALLBACK_LANGUAGES when the
+// filtered result is empty. Do NOT cast unvalidated CMS strings to Locale — anything not in the
+// catalogue is dropped.
+function normalizeLanguages(raw: unknown): Locale[] {
+  const seen = new Set<string>();
+  const out: Locale[] = [];
+  if (Array.isArray(raw)) {
+    for (const code of raw) {
+      if (typeof code === "string" && (LOCALES as readonly string[]).includes(code) && !seen.has(code)) {
+        seen.add(code);
+        out.push(code as Locale);
+      }
+    }
+  }
+  return out.length > 0 ? out : ([...FALLBACK_LANGUAGES] as Locale[]);
 }
 
 // `tenants.type` is a relationship to the extensible tenant-types collection. The site fetches at
@@ -58,28 +84,35 @@ function relSlug(rel: any): string | undefined {
 }
 
 function normalize(doc: any): Tenant {
-  const [name, nameAr] = loc(doc.name);
-  const [tagline, taglineAr] = loc(doc.branding?.tagline);
-  const [established, establishedAr] = loc(doc.branding?.established);
   const c = doc.contact ?? {};
-  const [address, addressAr] = loc(c.address);
+  const languages = normalizeLanguages(doc.languages);
+  // defaultLanguage: accept the stored CMS value only when it survives normalization
+  // (is in the enabled set); otherwise use the first normalized language. Never cast an
+  // unvalidated string.
+  const storedDefault =
+    typeof doc.defaultLanguage === "string" && (languages as readonly string[]).includes(doc.defaultLanguage)
+      ? (doc.defaultLanguage as Locale)
+      : undefined;
+  const defaultLanguage: Locale = storedDefault ?? languages[0];
   return {
     id: doc.id,
     slug: str(doc.slug) ?? "",
     type: relSlug(doc.type) ?? "hospital",
-    name, nameAr,
+    name: toLocalizedMap(doc.name),
     // hasMany text comes back as an array under locale=all it may be wrapped; keep it simple.
     domains: Array.isArray(doc.domains) ? doc.domains.map(String) : [],
     features: Array.isArray(doc.features) ? (doc.features as TenantFeature[]) : [],
+    languages,
+    defaultLanguage,
     initials: str(doc.branding?.initials),
-    tagline: tagline || undefined, taglineAr: taglineAr || undefined,
-    established: established || undefined, establishedAr: establishedAr || undefined,
+    tagline: toLocalizedMap(doc.branding?.tagline),
+    established: toLocalizedMap(doc.branding?.established),
     logo: imageUrl(doc.branding?.logo),
     themeColor: str(doc.branding?.themeColor),
     contact: {
       phone: str(c.phone),
       whatsapp: str(c.whatsapp), email: str(c.email),
-      address: address || undefined, addressAr: addressAr || undefined,
+      address: toLocalizedMap(c.address),
       social: {
         facebookUrl: str(c.social?.facebookUrl),
         instagramUrl: str(c.social?.instagramUrl),
@@ -90,10 +123,10 @@ function normalize(doc: any): Tenant {
         linkedinUrl: str(c.social?.linkedinUrl),
         tiktokUrl: str(c.social?.tiktokUrl),
       },
-      hours: Array.isArray(c.hours) ? c.hours.map((h: any) => {
-        const [day, dayAr] = loc(h.day); const [time, timeAr] = loc(h.time);
-        return { day, dayAr, time, timeAr };
-      }) : [],
+      hours: Array.isArray(c.hours) ? c.hours.map((h: any) => ({
+        day: toLocalizedMap(h.day),
+        time: toLocalizedMap(h.time),
+      })) : [],
     },
   };
 }
@@ -146,23 +179,26 @@ export function applyTenant(
   healthcareSettings?: HealthcareSettings,
 ): any {
   if (!tenant) return strings;
-  const ar = lang === "ar";
   const c = tenant.contact;
-  const hours = (c.hours ?? []).map((h) => ({ day: ar ? h.dayAr : h.day, time: ar ? h.timeAr : h.time }));
+  const fallback = tenant.defaultLanguage;
+  const hours = (c.hours ?? []).map((h) => ({
+    day: pickLocalized(h.day, lang, fallback),
+    time: pickLocalized(h.time, lang, fallback),
+  }));
   return {
     ...strings,
     site: {
       ...strings.site,
-      name: (ar ? tenant.nameAr : tenant.name) || strings.site?.name,
-      established: (ar ? tenant.establishedAr : tenant.established) || strings.site?.established,
-      tagline: (ar ? tenant.taglineAr : tenant.tagline) || strings.site?.tagline,
+      name: pickLocalized(tenant.name, lang, fallback) || strings.site?.name,
+      established: pickLocalized(tenant.established, lang, fallback) || strings.site?.established,
+      tagline: pickLocalized(tenant.tagline, lang, fallback) || strings.site?.tagline,
       initials: tenant.initials || strings.site?.initials,
     },
     contact: {
       ...strings.contact,
       details: {
         ...strings.contact?.details,
-        address: (ar ? c.addressAr : c.address) || strings.contact?.details?.address,
+        address: pickLocalized(c.address, lang, fallback) || strings.contact?.details?.address,
         phone: c.phone || strings.contact?.details?.phone,
         emergencyNumber: healthcareSettings?.emergencyNumber || strings.contact?.details?.emergencyNumber,
         whatsapp: c.whatsapp || strings.contact?.details?.whatsapp,

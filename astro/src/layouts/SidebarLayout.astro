@@ -3,6 +3,7 @@ import TheSidebar from '../components/layout/TheSidebar.vue';
 import TheTopBar from '../components/layout/TheTopBar.astro';
 import TheFooter from '../components/layout/TheFooter.astro';
 import { applyTenant } from '../lib/tenant';
+import { FALLBACK_LANGUAGES, type Locale } from '../i18n';
 
 interface BreadcrumbItem {
   label: string;
@@ -22,8 +23,14 @@ const { lang, strings, breadcrumbs = [], currentPath = Astro.url.pathname } = As
 // pass its capability list so nav items for disabled features are hidden. undefined tenant/features
 // = single-tenant fallback (show everything, i18n defaults).
 const tenant = Astro.locals.tenant;
-const tStrings = applyTenant(strings, tenant, lang as 'ar' | 'en', Astro.locals.healthcareSettings);
+const tStrings = applyTenant(strings, tenant, lang as Locale, Astro.locals.healthcareSettings);
 const features = tenant?.features;
+
+// Locale props for Vue islands — fail-open at the prop boundary when no tenant is resolved
+// (single-tenant / unseeded): the unresolved-tenant fallback set and its first entry. These
+// are REQUIRED on every island caller (§12), never optional.
+const defaultLanguage: Locale = (tenant?.defaultLanguage as Locale | undefined) ?? FALLBACK_LANGUAGES[0];
+const languages: Locale[] = (tenant?.languages as Locale[] | undefined) ?? FALLBACK_LANGUAGES;
 
 // Pass only what TheSidebar actually uses — avoids serialising the full i18n
 // object (~5 KB) into every page's <astro-island> hydration payload.
@@ -55,7 +62,15 @@ const breadcrumbJsonLd = showBreadcrumb
 <TheTopBar lang={lang} strings={tStrings} features={features} />
 
 <div class="flex flex-1">
-  <TheSidebar lang={lang} currentPath={currentPath} strings={sidebarStrings} features={features} client:load />
+  <TheSidebar
+    lang={lang}
+    currentPath={currentPath}
+    strings={sidebarStrings}
+    features={features}
+    defaultLanguage={defaultLanguage}
+    languages={languages}
+    client:load
+  />
   <main id="main-content" class="flex-1 min-w-0">
     {showBreadcrumb && (
       <div class="bg-ivory-50 px-6 lg:px-8 py-3">

@@ -39,19 +39,24 @@
       </button>
     </div>
 
-    <!-- Language toggle row -->
-    <div class="px-5 py-3 border-b border-ink-100">
-      <a
-        :href="langSwitchUrl"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ink-200 rounded-full text-sm font-medium text-ink-700 hover:border-teal-600 hover:text-teal-800 transition-colors"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-        {{ lang === 'ar' ? strings.nav?.toggleToEn : strings.nav?.toggleToAr }}
-      </a>
+    <!-- Language switcher row — hidden on single-language tenants. -->
+    <div v-if="languageLinks.length > 1" class="px-5 py-3 border-b border-ink-100">
+      <nav class="flex items-center gap-2" aria-label="Languages">
+        <a
+          v-for="link in languageLinks"
+          :key="link.locale"
+          :href="link.href"
+          :hreflang="link.locale"
+          :aria-current="link.locale === lang ? 'page' : undefined"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-sm font-medium transition-colors"
+          :class="link.locale === lang
+            ? 'border-teal-600 text-teal-800'
+            : 'border-ink-200 text-ink-700 hover:border-teal-600 hover:text-teal-800'"
+          @click="onNavClick"
+        >
+          {{ link.locale.toUpperCase() }}
+        </a>
+      </nav>
     </div>
 
     <!-- Nav items -->
@@ -100,37 +105,40 @@ import {
   Phone,
 } from '@lucide/vue';
 import { useUiStore } from '../../stores/ui';
+import { localePath, languageSwitchLinks, isRTL, type Locale } from '../../i18n';
 
 const props = defineProps<{
-  lang: string;
+  lang: Locale;
   currentPath: string;
   strings: any;
   // Tenant capabilities. undefined = single-tenant fallback (show every nav item).
   features?: string[];
+  // Required (§12): the tenant's published language set + its default. Drive the switcher
+  // and per-island pickLocalized fallback from these — never from local literals.
+  defaultLanguage: Locale;
+  languages: Locale[];
 }>();
 
 const uiStore = useUiStore();
 const sidebarEl = ref<HTMLElement | null>(null);
 const isHydrated = ref(false);
 
-// Tracks the current page path -- updated via astro:page-load so the persisted
-// component highlights the correct nav item after View Transition navigations.
+// Tracks the current page path + querystring -- updated via astro:page-load so the
+// persisted component highlights the correct nav item and language entry after View
+// Transition navigations.
 const livePath = ref(props.currentPath);
+const liveSearch = ref('');
 
 const emergencyNumber = computed(() => props.strings.contact?.details?.emergencyNumber ?? '12345');
 
-// Prefix helper: empty for Arabic (default, no prefix), /en for English
-const lp = (path: string) => props.lang === 'ar' ? path : `/en${path}`;
+// Catalogue-driven prefix helper — no hardcoded locale codes.
+const lp = (path: string) => localePath(path, props.lang);
 
-// Language switch URL (safe for SSR)
-const langSwitchUrl = computed(() => {
-  const path = livePath.value;
-  if (props.lang === 'ar') {
-    return path === '/' ? '/en/' : `/en${path}`;
-  } else {
-    return path.replace(/^\/en/, '') || '/';
-  }
-});
+// Tenant-scoped language switcher. Visibility = `languageLinks.length > 1` (one entry per
+// supplied locale); querystring preserved through `languageSwitchLinks`.
+const languageLinks = computed(() =>
+  languageSwitchLinks(livePath.value, liveSearch.value, props.languages),
+);
 
 const gated = (feature?: string) => !!props.features && !!feature && !props.features.includes(feature);
 
@@ -160,6 +168,7 @@ function onNavClick() {
 
 function onPageLoad() {
   livePath.value = window.location.pathname;
+  liveSearch.value = window.location.search;
   // Close mobile drawer on navigation
   uiStore.closeMenu();
 }
@@ -183,7 +192,7 @@ onUnmounted(() => {
   }
 });
 
-const isRtl = computed(() => props.lang === 'ar');
+const isRtl = computed(() => isRTL(props.lang));
 
 const sidebarClasses = computed(() => [
   'fixed top-0 h-screen z-50 flex w-[280px] flex-col bg-white shadow-deep xl:hidden',

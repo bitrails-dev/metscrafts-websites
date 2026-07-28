@@ -11,6 +11,9 @@ async function findDocs(collection: string, tenantId?: TenantId, limit = 1000): 
   const result = await (payload as any).find({
     collection,
     locale: "all",
+    // Disable Payload's default-locale fallback so each tenant map only contains the locales a
+    // field actually has values for (§2.2 item 4).
+    fallbackLocale: false,
     depth: 1,
     limit,
     // Multi-tenant reads are NOT auto-filtered by the plugin on the Local API, so the tenant

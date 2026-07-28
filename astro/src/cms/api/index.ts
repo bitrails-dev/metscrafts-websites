@@ -10,7 +10,9 @@ const CMS = import.meta.env?.CMS_URL ?? "http://localhost:3001";
 
 async function fetchDocs(slug: string, tenantId?: TenantId, limit = 1000): Promise<any[]> {
   const where = tenantId != null ? `&where[tenant][equals]=${encodeURIComponent(String(tenantId))}` : "";
-  const url = `${CMS}/api/${slug}?locale=all&depth=1&limit=${limit}${where}`;
+  // fallback-locale=none disables Payload's default-locale fallback so each tenant map only
+  // contains the locales the field actually has values for (§2.2 item 4).
+  const url = `${CMS}/api/${slug}?locale=all&fallback-locale=none&depth=1&limit=${limit}${where}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Payload /${slug} returned ${res.status}: ${await res.text()}`);
   return ((await res.json()) as any).docs;

@@ -19,12 +19,26 @@
       </nav>
 
       <div class="flex items-center gap-2">
-        <a
-          class="rounded-full border border-primary px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-navy-900 hover:text-white transition-colors"
-          :href="switchHref"
+        <!-- Language switcher — hidden on single-language tenants. -->
+        <nav
+          v-if="languageLinks.length > 1"
+          aria-label="Languages"
+          class="flex items-center gap-1"
         >
-          {{ lang === 'ar' ? strings.nav.toggleToEn : strings.nav.toggleToAr }}
-        </a>
+          <a
+            v-for="link in languageLinks"
+            :key="link.locale"
+            class="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+            :class="link.locale === lang
+              ? 'border-teal-600 text-teal-800'
+              : 'border-ink-200 text-ink-700 hover:border-teal-600 hover:text-teal-800'"
+            :href="link.href"
+            :hreflang="link.locale"
+            :aria-current="link.locale === lang ? 'page' : undefined"
+          >
+            {{ link.locale.toUpperCase() }}
+          </a>
+        </nav>
 
         <a
           v-if="status === 'signed_out'"
@@ -55,22 +69,31 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { portalApi } from "./api";
+import { localePath, languageSwitchLinks, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
+const props = defineProps<{
+  lang: Locale;
+  strings: any;
+  // Required (§12): tenant's published language set + its default.
+  defaultLanguage: Locale;
+  languages: Locale[];
+  currentPath?: string;
+}>();
 
 type Status = "loading" | "signed_out" | "signed_in_verified" | "signed_in_pending";
 const status = ref<Status>("loading");
 
-const lp = (path: string) => props.lang === "ar" ? path : `/en${path}`;
+// Catalogue-driven prefix helper — no hardcoded locale codes.
+const lp = (path: string) => localePath(path, props.lang);
 
-const switchHref = computed(() => {
-  const path = typeof window === "undefined" ? lp('/portal/') : window.location.pathname;
-  if (props.lang === "ar") {
-    return path === "/" ? "/en/" : `/en${path}`;
-  } else {
-    return path.replace(/^\/en/, "") || "/portal/";
-  }
-});
+// Live URL refs — populated on mount so the persisted island renders the right switcher
+// entries after View Transition navigations. Querystring preserved end-to-end.
+const livePath = ref(props.currentPath ?? "/");
+const liveSearch = ref("");
+
+const languageLinks = computed(() =>
+  languageSwitchLinks(livePath.value, liveSearch.value, props.languages),
+);
 
 async function refresh() {
   try {
@@ -90,5 +113,11 @@ async function onLogout() {
   }
 }
 
-onMounted(refresh);
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    livePath.value = window.location.pathname;
+    liveSearch.value = window.location.search;
+  }
+  refresh();
+});
 </script>

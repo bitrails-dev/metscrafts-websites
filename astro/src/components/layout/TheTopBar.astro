@@ -5,7 +5,7 @@ interface Props {
   features?: string[];
 }
 
-import { localePath } from '../../i18n';
+import { localePath, FALLBACK_LANGUAGES, languageSwitchLinks, type Locale } from '../../i18n';
 
 const { lang, strings, features } = Astro.props;
 
@@ -14,13 +14,14 @@ const { lang, strings, features } = Astro.props;
 const gated = (feature?: string) => !!features && !!feature && !features.includes(feature);
 
 const currentUrl = Astro.url.pathname;
-
-// lang switch: ar pages have no prefix (/about), en pages have /en prefix (/en/about)
-const langSwitchUrl = lang === 'ar'
-  ? (currentUrl === '/' ? '/en/' : `/en${currentUrl}`)
-  : (currentUrl.replace(/^\/en/, '') || '/');
-
 const currentPathClean = currentUrl.replace(/\/$/, '') || '/';
+
+// Tenant-driven switcher: honour the resolved tenant's published language set, fall back to
+// the unresolved-tenant default. Visibility = `links.length > 1` (hide on single-language tenants).
+// Querystring is preserved end-to-end via `languageSwitchLinks`.
+const tenant = Astro.locals.tenant;
+const langs: Locale[] = tenant?.languages?.length ? tenant.languages : FALLBACK_LANGUAGES;
+const languageLinks = languageSwitchLinks(Astro.url.pathname, Astro.url.search, langs);
 
 const navItems = [
   { id: 'home',         href: localePath('/', lang),             label: strings.nav?.home,         feature: undefined },
@@ -73,13 +74,26 @@ const navItems = [
 
     <!-- Utility (desktop: lang; mobile: hamburger only) -->
     <div class="flex items-center gap-2 shrink-0">
-      <!-- Language toggle (desktop only) -->
-      <a
-        href={langSwitchUrl}
-        class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 border border-ink-200 rounded-full text-sm font-medium text-ink-700 hover:border-teal-600 hover:text-teal-800 transition-colors"
-      >
-        {lang === 'ar' ? strings.nav?.toggleToEn : strings.nav?.toggleToAr}
-      </a>
+      <!-- Language switcher — desktop only. Hidden on single-language tenants. -->
+      {languageLinks.length > 1 && (
+        <nav aria-label="Languages" class="hidden xl:flex items-center gap-2">
+          {languageLinks.map(({ locale, href }) => (
+            <a
+              href={href}
+              hreflang={locale}
+              aria-current={locale === lang ? 'page' : undefined}
+              class:list={[
+                'px-3 py-1.5 border rounded-full text-sm font-medium transition-colors',
+                locale === lang
+                  ? 'border-teal-600 text-teal-800'
+                  : 'border-ink-200 text-ink-700 hover:border-teal-600 hover:text-teal-800',
+              ]}
+            >
+              {locale.toUpperCase()}
+            </a>
+          ))}
+        </nav>
+      )}
 
       <!-- Hamburger (mobile/tablet only) -->
       <button

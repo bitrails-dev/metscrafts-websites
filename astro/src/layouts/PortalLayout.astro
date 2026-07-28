@@ -2,9 +2,10 @@
 import BaseLayout from "./BaseLayout.astro";
 import PortalNav from "../components/portal/PortalNav.vue";
 import TheFooter from "../components/layout/TheFooter.astro";
+import { FALLBACK_LANGUAGES, type Locale } from "../i18n";
 
 interface Props {
-  lang: "ar" | "en";
+  lang: Locale;
   strings: any;
   title: string;
   description: string;
@@ -12,9 +13,21 @@ interface Props {
 }
 
 const { lang, strings, title, description, noindex = true } = Astro.props;
+
+// Fail-open locale props for the PortalNav island. REQUIRED on the caller (§12).
+const tenant = Astro.locals.tenant;
+const defaultLanguage: Locale = (tenant?.defaultLanguage as Locale | undefined) ?? FALLBACK_LANGUAGES[0];
+const languages: Locale[] = (tenant?.languages as Locale[] | undefined) ?? FALLBACK_LANGUAGES;
 ---
 <BaseLayout lang={lang} strings={strings} title={title} description={description} noindex={noindex}>
-  <PortalNav lang={lang} strings={strings} client:load />
+  <PortalNav
+    lang={lang}
+    strings={strings}
+    defaultLanguage={defaultLanguage}
+    languages={languages}
+    currentPath={Astro.url.pathname}
+    client:load
+  />
   <section class="pt-24">
     <div class="container mx-auto px-4">
       <slot />

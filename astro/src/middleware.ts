@@ -1,23 +1,16 @@
 import { defineMiddleware } from "astro:middleware";
-import { resolveTenant, routeGated, type TenantFeature } from "./lib/tenant";
+import { resolveTenant, routeGated } from "./lib/tenant";
 import { getHealthcareSettings } from "./cms";
+import {
+  FEATURE_ROUTES,
+  computeLocaleRedirect,
+} from "./lib/feature-routes";
+import type { Locale } from "./i18n";
 
-// Route → capability. A tenant that lacks the capability 404s the whole route subtree.
-// Matches both the Arabic default (no prefix) and the English (/en) routes.
-const FEATURE_ROUTES: Array<[RegExp, TenantFeature]> = [
-  [/^\/(en\/)?departments(\/|$)/, "departments"],
-  [/^\/(en\/)?team(\/|$)/, "team"],
-  [/^\/(en\/)?doctors(\/|$)/, "team"],
-  [/^\/(en\/)?articles(\/|$)/, "articles"],
-  [/^\/(en\/)?events(\/|$)/, "events"],
-  [/^\/(en\/)?awards(\/|$)/, "awards"],
-  [/^\/(en\/)?achievements(\/|$)/, "achievements"],
-  [/^\/(en\/)?testimonials(\/|$)/, "testimonials"],
-  [/^\/(en\/)?portal(\/|$)/, "portal"],
-  // Commerce storefront (shop, cart, checkout, account) + its same-origin BFF. Pages gate on the
-  // `commerce` feature; the /api/store/* routes check storeTenantSlug() themselves (not matched here).
-  [/^\/(en\/)?(shop|cart|checkout|account)(\/|$)/, "commerce"],
-];
+// Re-exported for type-only consumers and future tooling. Pure helpers live in
+// `./lib/feature-routes` (no `astro:middleware` dep) so they remain importable under
+// `tsx --test` (which can't resolve Astro virtual modules).
+export { buildFeatureRoutes, isContentPath, FEATURE_ROUTES } from "./lib/feature-routes";
 
 // --- Payload dashboard on-demand proxy (container only) ---
 // When SUPERVISOR_CONTROL_URL is set, requests for the Payload admin / Next assets / CMS REST are
@@ -109,6 +102,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const tenant = await resolveTenant(context.url.hostname);
   context.locals.tenant = tenant;
 
+  // Path used by both locale enforcement and feature gating. Hoisted above the locale
+  // block (RC-2/TS2448) — the old lower declaration was removed when this block was inserted.
+  const path = context.url.pathname;
+
+  // Locale enforcement — runs IMMEDIATELY AFTER the tenant assign and BEFORE the
+  // vertical-settings healthcare-settings fetch + the feature gate (do NOT reorder the
+  // healthcare block below). When the tenant publishes a non-empty language set, any
+  // content path whose requested locale is outside that set 302-redirects to the tenant
+  // default locale. The querystring is preserved verbatim (BLK-4). Pure decision logic
+  // lives in `computeLocaleRedirect` so it is unit-testable under tsx.
+  if (tenant?.languages?.length) {
+    const dest = computeLocaleRedirect(
+      path,
+      context.url.search,
+      tenant.languages as readonly Locale[],
+      (tenant.defaultLanguage ?? tenant.languages[0]) as Locale,
+    );
+    if (dest) return context.redirect(dest, 302);
+  }
+
   // Single per-request healthcare-settings read. Only healthcare tenants carry hero stats / an
   // emergency number to surface, and the UNIQUE(tenant_id) invariant makes this one indexed lookup.
   // Dashboard-proxy requests return above before reaching here, so they bypass this read entirely.
@@ -124,7 +137,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  const path = context.url.pathname;
   const rule = FEATURE_ROUTES.find(([re]) => re.test(path));
   if (rule && routeGated(tenant, rule[1])) {
     return context.rewrite("/404");

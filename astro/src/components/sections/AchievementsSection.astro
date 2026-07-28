@@ -1,20 +1,23 @@
 ---
+import { pickLocalized, type Locale } from '../../i18n';
 import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
 interface Props {
 	lang: 'ar' | 'en';
 	strings: any;
 	stats?: HealthcareSettings['stats'];
+	// Tenant default locale — the A7-safe pickLocalized fallback when `lang` has no value.
+	defaultLanguage: Locale;
 }
-const { lang, strings, stats } = Astro.props;
-const isAr = lang === 'ar';
+const { lang, strings, stats, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
 
 // Stats come from the tenant's healthcare-settings doc (passed in by the page). No settings → no items.
 const items = stats ? [
-	{ value: isAr ? stats.years.valueAr       : stats.years.value,       unit: isAr ? stats.years.unitAr       : stats.years.unit,       label: strings.hero.stats.years       },
-	{ value: isAr ? stats.departments.valueAr : stats.departments.value, unit: isAr ? stats.departments.unitAr : stats.departments.unit, label: strings.hero.stats.departments },
-	{ value: isAr ? stats.patients.valueAr    : stats.patients.value,    unit: isAr ? stats.patients.unitAr    : stats.patients.unit,    label: strings.hero.stats.patients    },
-	{ value: isAr ? stats.staff.valueAr       : stats.staff.value,       unit: isAr ? stats.staff.unitAr       : stats.staff.unit,       label: strings.hero.stats.staff       },
+	{ value: pickLocalized(stats.years.value, lang, fallback),       unit: pickLocalized(stats.years.unit, lang, fallback),       label: strings.hero.stats.years       },
+	{ value: pickLocalized(stats.departments.value, lang, fallback), unit: pickLocalized(stats.departments.unit, lang, fallback), label: strings.hero.stats.departments },
+	{ value: pickLocalized(stats.patients.value, lang, fallback),    unit: pickLocalized(stats.patients.unit, lang, fallback),    label: strings.hero.stats.patients    },
+	{ value: pickLocalized(stats.staff.value, lang, fallback),       unit: pickLocalized(stats.staff.unit, lang, fallback),       label: strings.hero.stats.staff       },
 ] : [];
 ---
 

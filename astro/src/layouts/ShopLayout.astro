@@ -2,12 +2,12 @@
 import BaseLayout from "./BaseLayout.astro";
 import TheFooter from "../components/layout/TheFooter.astro";
 import CartBadge from "../components/shop/CartBadge.vue";
-import { getStrings, localePath } from "../i18n";
+import { getStrings, localePath, type Locale } from "../i18n";
 
 // Storefront chrome: a slim shop header (shop / account / cart with a live count badge) over the
 // BaseLayout shell. Modeled on PortalLayout. Pages under /shop, /cart, /checkout, /account use this.
 interface Props {
-  lang: "ar" | "en";
+  lang: Locale;
   strings: any;
   title: string;
   description: string;
