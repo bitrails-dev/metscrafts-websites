@@ -7,6 +7,12 @@
       "skillPath": "skills/engineering/ask-matt/SKILL.md",
       "computedHash": "5ec84a4c2d9021d99780e5222b2a9f532b53cca8237024eb6cb40ad370c667c5"
     },
+    "claude-delegate": {
+      "source": "amElnagdy/delegate-skills",
+      "sourceType": "github",
+      "skillPath": "skills/claude-delegate/SKILL.md",
+      "computedHash": "f9811b014c6767bd520b19809b2bbfc26952f7e59ad9becf5a246e38ffc1e888"
+    },
     "code-review": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -23,7 +29,7 @@
       "source": "amElnagdy/delegate-skills",
       "sourceType": "github",
       "skillPath": "skills/codex-delegate/SKILL.md",
-      "computedHash": "d04c475556ca8ce74d6b987068a52df57acc7707909935eee0132f2fff33e987"
+      "computedHash": "ebf1e7aaaed810d289f0779d47623119b7f7368886057895ddf5cf5b61b3a694"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -77,7 +83,7 @@
       "source": "amElnagdy/delegate-skills",
       "sourceType": "github",
       "skillPath": "skills/opencode-delegate/SKILL.md",
-      "computedHash": "012ea2680f1f231550e63bed2063d9e00c1999dec5ba5aee5b538343b794a989"
+      "computedHash": "988c8f7c4c687d88e2985e97a30b25a62d0860a39fe53ba885dc7672b33b28fe"
     },
     "prototype": {
       "source": "mattpocock/skills",

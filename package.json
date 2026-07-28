@@ -1,14 +1,15 @@
 {
-	"name": "bitrails-works",
-	"version": "1.0.0",
-	"private": true,
-	"packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
-	"scripts": {
-		"dev": "$env:CMS_MODE=\"api\"; pnpm --filter @bitrails-works/astro dev",
-		"dev:in-process": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=in-process astro dev",
-		"dev:api": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=api astro dev",
-		"build": "pnpm --filter @bitrails-works/astro build",
-		"preview": "pnpm --filter @bitrails-works/astro preview",
-		"dev:cms": "pnpm --filter @bitrails-works/cms dev"
-	}
+  "name": "bitrails-works",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
+  "scripts": {
+    "dev": "pnpm --filter @bitrails-works/astro dev",
+    "dev:in-process": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=in-process astro dev",
+	"dev:api": "pnpm --filter @bitrails-works/astro exec -- cross-env CMS_MODE=api astro dev",
+    "build": "pnpm --filter @bitrails-works/astro build",
+    "preview": "pnpm --filter @bitrails-works/astro preview",
+    "dev:cms": "pnpm --filter @bitrails-works/cms dev",
+    "build:cms": "pnpm --filter @bitrails-works/cms build"
+  }
 }

@@ -1,0 +1,32 @@
+# Docker reads .dockerignore from the CONTEXT ROOT (repo root), not next to the Dockerfile.
+# Without this, `COPY astro ./astro` / `COPY cms ./cms` would drag the host's Windows-built
+# node_modules + stale dist/.next into the image and clobber the clean container install.
+
+**/node_modules/
+**/.output/
+**/dist/
+**/.astro/
+**/.next/
+cms/*.db
+cms/*.db-*
+cms/cms.db.bak
+cms/scratch-build.db
+
+# Secrets / local env
+.env
+.env.*
+**/.env
+**/.env.local
+
+# VCS + agent/planning artefacts
+.git/
+.github/
+.claude/
+.planning/
+.zcode/
+
+# Docs not needed at runtime
+docs/
+README.md
+CLAUDE.md
+PRODUCT.md
