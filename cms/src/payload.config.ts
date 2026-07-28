@@ -30,10 +30,10 @@ import {
   StockMovements,
   StockReservations,
   InventoryTransfers,
-  CommerceSettings,
   PaymentEvents,
   Customers,
 } from './collections/commerce'
+import { VERTICAL_SETTINGS, verticalSettingsCollections } from './verticals/registry'
 import {
   authenticatedFieldAccess,
   manageUserScopeFieldAccess,
@@ -153,8 +153,8 @@ export default buildConfig({
     StockMovements,
     StockReservations,
     InventoryTransfers,
-    // Tenant-global commerce settings (one per tenant) + idempotent payment-event ledger.
-    CommerceSettings,
+    // Tenant-scoped vertical-settings collections (one per tenant): commerce + healthcare.
+    ...VERTICAL_SETTINGS.map(({ config }) => config),
     PaymentEvents,
     Customers,
     // Plugin-first commerce policy collections (Wave C4): tenant-scoped tax/shipping/promotion/
@@ -265,7 +265,7 @@ export default buildConfig({
         'stock-movements': {},
         'stock-reservations': {},
         'inventory-transfers': {},
-        'commerce-settings': {},
+        ...verticalSettingsCollections,
         'payment-events': {},
         customers: {},
         // Plugin-first commerce collections. The ecommerce plugin is the sole owner of these base

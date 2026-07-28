@@ -113,3 +113,14 @@ test('plugin-owned commerce models have no legacy duplicate collections', async 
     assert.equal(slugs.has(slug), false, `${slug} duplicates its plugin-owned store-* collection`)
   }
 })
+
+test('the healthcare feature governs the healthcare-settings collection', () => {
+  // Vertical-settings collections are registered once in verticals/registry and merged into the
+  // feature map. Lock healthcare-settings to its `healthcare` feature so it cannot silently drift.
+  const policy = TENANT_COLLECTION_FEATURES['healthcare-settings' as keyof typeof TENANT_COLLECTION_FEATURES] as
+    | { features?: unknown; tenantScoped?: boolean }
+    | undefined
+  assert.ok(policy, 'healthcare-settings must be in TENANT_COLLECTION_FEATURES')
+  assert.equal(policy!.features, 'healthcare', "healthcare-settings must be gated on the 'healthcare' feature")
+  assert.equal(policy!.tenantScoped, true, 'healthcare-settings must be tenant-scoped')
+})

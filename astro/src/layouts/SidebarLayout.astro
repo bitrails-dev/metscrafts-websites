@@ -22,7 +22,7 @@ const { lang, strings, breadcrumbs = [], currentPath = Astro.url.pathname } = As
 // pass its capability list so nav items for disabled features are hidden. undefined tenant/features
 // = single-tenant fallback (show everything, i18n defaults).
 const tenant = Astro.locals.tenant;
-const tStrings = applyTenant(strings, tenant, lang as 'ar' | 'en');
+const tStrings = applyTenant(strings, tenant, lang as 'ar' | 'en', Astro.locals.healthcareSettings);
 const features = tenant?.features;
 
 // Pass only what TheSidebar actually uses — avoids serialising the full i18n

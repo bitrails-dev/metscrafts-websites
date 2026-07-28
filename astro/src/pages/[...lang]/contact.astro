@@ -9,7 +9,7 @@ import { applyTenant } from '../../lib/tenant';
 
 const lang = (Astro.params.lang || "ar") as Locale;
 // Tenant-driven contact details (phone/email/address/hours) + name, with i18n fallback.
-const strings = applyTenant(getStrings(lang), Astro.locals.tenant, lang);
+const strings = applyTenant(getStrings(lang), Astro.locals.tenant, lang, Astro.locals.healthcareSettings);
 const breadcrumbs = [
   { label: strings.breadcrumb.home, href: localePath('/', lang) },
   { label: strings.breadcrumb.contact },

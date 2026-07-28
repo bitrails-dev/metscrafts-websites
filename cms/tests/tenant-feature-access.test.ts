@@ -109,6 +109,7 @@ test('each tenant capability exposes only its related collections', async () => 
     ['awards', 'awards'],
     ['achievements', 'achievements'],
     ['testimonials', 'testimonials'],
+    ['healthcare-settings', 'healthcare'],
   ]
 
   for (const [slug, feature] of cases) {
@@ -253,4 +254,26 @@ test('a stale tenant selection fails closed instead of breaking admin navigation
     findTenant: async () => { throw new Error('Tenant no longer exists') },
     slug: 'departments',
   }), false)
+})
+
+test('healthcare-settings is gated on the healthcare feature, not commerce', async () => {
+  // Enabled by `healthcare`, not `commerce`, and disabled with no feature.
+  assert.notEqual(await readCollection('healthcare-settings', ['healthcare']), false)
+  assert.equal(await readCollection('healthcare-settings', ['commerce']), false)
+  assert.equal(await readCollection('healthcare-settings', []), false)
+})
+
+test('anonymous public reads are allowed for healthcare-settings, but writes stay denied', async () => {
+  // Hero stats + the emergency number are public website content → anonymous read is open.
+  assert.equal(await accessCollection({ features: [], slug: 'healthcare-settings', user: null }), true)
+
+  // Writes require authentication: no anonymous create/update/delete.
+  for (const operation of ['create', 'update', 'delete'] as const) {
+    assert.equal(await accessCollection({
+      features: ['healthcare'],
+      operation,
+      slug: 'healthcare-settings',
+      user: null,
+    }), false)
+  }
 })

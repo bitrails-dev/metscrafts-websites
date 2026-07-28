@@ -11,6 +11,7 @@ import { payloadUploadUrl } from "./in-process/upload-url";
 import { apiUploadUrl } from "./api/upload-url";
 
 export type { CmsBackend, CmsCollectionEntry, CmsImageInput, CollectionName, TenantId } from "./types";
+export type { HealthcareSettings, LocalizedStat } from "./shared/healthcare-settings";
 
 const MODE: "in-process" | "api" = process.env.CMS_MODE === "api" ? "api" : "in-process";
 
@@ -37,6 +38,10 @@ export async function getCollection(name: CollectionName, tenantId?: TenantId) {
 
 export async function getTenants() {
   return (await backend()).getTenants();
+}
+
+export async function getHealthcareSettings(tenantId: TenantId) {
+  return (await backend()).getHealthcareSettings(tenantId);
 }
 
 // imageUrl is needed synchronously in templates; both impls are tiny and dependency-free, so

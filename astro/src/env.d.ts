@@ -13,5 +13,6 @@ interface ImportMeta {
 declare namespace App {
   interface Locals {
     tenant?: import("./lib/tenant").Tenant;
+    healthcareSettings?: import("./cms/shared/healthcare-settings").HealthcareSettings;
   }
 }

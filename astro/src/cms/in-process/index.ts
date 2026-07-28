@@ -2,6 +2,7 @@
 // and rewrites upload URLs to Astro-served /uploads/… paths. No CMS server roundtrip.
 import type { CmsBackend, TenantId } from "../types";
 import { makeGetCollection } from "../shared/map";
+import { normalizeHealthcareSettingsDocs } from "../shared/healthcare-settings";
 import { getCmsPayload } from "./payload";
 import { payloadUploadUrl } from "./upload-url";
 
@@ -26,5 +27,6 @@ export const inProcessBackend: CmsBackend = {
     payloadUploadUrl,
   ),
   getTenants: () => findDocs("tenants", undefined, 100),
+  getHealthcareSettings: async (tenantId) => normalizeHealthcareSettingsDocs(await findDocs("healthcare-settings", tenantId, 1)),
   imageUrl: payloadUploadUrl,
 };

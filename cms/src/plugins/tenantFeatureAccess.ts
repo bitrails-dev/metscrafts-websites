@@ -11,6 +11,7 @@ import type {
 } from 'payload'
 import { getUserTenantIDs, isSuperAdmin } from '../access/userAccess'
 import type { TenantFeature } from '../collections/tenantFeatures'
+import { verticalSettingsFeatureMap } from '../verticals/registry'
 
 // Re-exported for backward compatibility: existing imports resolve the feature key union from the
 // plugin path. The canonical definition lives in collections/tenantFeatures.ts so the catalogue can
@@ -42,7 +43,6 @@ export const TENANT_COLLECTION_FEATURES = {
   'stock-movements': { features: 'commerce', tenantScoped: true },
   'stock-reservations': { features: 'commerce', tenantScoped: true },
   'inventory-transfers': { features: 'commerce', tenantScoped: true },
-  'commerce-settings': { features: 'commerce', tenantScoped: true },
   'payment-events': { features: 'commerce', tenantScoped: true },
   // Plugin-first commerce policy collections (Wave C4) — tax/shipping/promotion/gift-card persistence
   // backing the authoritative quoteCart. Grouped with inventory/stock: all are `commerce` infrastructure
@@ -67,6 +67,9 @@ export const TENANT_COLLECTION_FEATURES = {
   'store-addresses': { features: 'commerce', tenantScoped: true },
   'store-orders': { features: 'commerce', tenantScoped: true },
   'store-transactions': { features: 'commerce', tenantScoped: true },
+  // Tenant-scoped vertical-settings collections (commerce-settings, healthcare-settings) — registered
+  // once in verticals/registry; their feature policy is derived from that single source of truth.
+  ...verticalSettingsFeatureMap,
 } as const satisfies Record<string, FeaturePolicy>
 
 // Every collection that carries a tenant relationship (i.e. is tenant-owned) MUST appear in

@@ -23,9 +23,14 @@ export const COLLECTION_NAMES = [
 ] as const;
 export type CollectionName = (typeof COLLECTION_NAMES)[number];
 
+import type { HealthcareSettings } from "./shared/healthcare-settings";
+
 export interface CmsBackend {
   readonly mode: "in-process" | "api";
   getCollection(name: CollectionName, tenantId?: TenantId): Promise<CmsCollectionEntry[]>;
   getTenants(): Promise<any[]>;
+  // Tenant-scoped healthcare hero stats + emergency number. At most one doc per tenant; undefined
+  // when the tenant has no healthcare-settings row.
+  getHealthcareSettings(tenantId: TenantId): Promise<HealthcareSettings | undefined>;
   imageUrl(f: CmsImageInput): string | undefined;
 }

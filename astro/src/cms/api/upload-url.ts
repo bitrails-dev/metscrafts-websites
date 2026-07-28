@@ -1,6 +1,6 @@
 import type { CmsImageInput } from "../types";
 
-const CMS = import.meta.env.CMS_URL ?? "http://localhost:3001";
+const CMS = import.meta.env?.CMS_URL ?? "http://localhost:3001";
 
 // In "api" mode the Next CMS server is running and serves uploads at ${CMS_URL}/api/<slug>/file/
 // <filename>. Prefix relative upload paths with the CMS origin; absolute/external URLs pass through.

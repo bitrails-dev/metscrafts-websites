@@ -69,7 +69,7 @@ const fieldCondition = (fieldName: string): AdminCondition => {
   return condition
 }
 
-const ALL_GROUPS: TenantSettingGroup[] = ['general', 'branding', 'hero', 'contact']
+const ALL_GROUPS: TenantSettingGroup[] = ['general', 'branding', 'contact']
 
 const fullTenant = (entitlement: TenantSettingGroup[]): Record<string, unknown> => ({
   id: 7,
@@ -82,15 +82,8 @@ const fullTenant = (entitlement: TenantSettingGroup[]): Record<string, unknown> 
   features: ['departments'],
   settingsEntitlement: entitlement,
   branding: { initials: 'ASH', tagline: 'Care first', themeColor: '#15504f' },
-  hero: {
-    years: { value: '20', unit: 'yrs' },
-    departments: { value: '12', unit: '' },
-    patients: { value: '500k', unit: '' },
-    staff: { value: '800', unit: '' },
-  },
   contact: {
     phone: '+1',
-    emergencyNumber: '911',
     whatsapp: '',
     email: 'info@al-salam.test',
     address: '123 St',
@@ -119,7 +112,6 @@ test('a super-admin can edit every setting group and change the entitlement', ()
         settingsEntitlement: ALL_GROUPS,
         name: 'New Name',
         branding: { initials: 'XX' },
-        hero: { years: { value: '99' } },
         contact: { phone: '+2' },
       },
     }),
@@ -157,13 +149,13 @@ test('an assigned tenant admin can edit a setting group enabled by the entitleme
   )
 })
 
-test('an enabled nested/localized group value may change freely (hero)', () => {
-  const original = fullTenant(['hero'])
+test('an enabled nested/localized group value may change freely (branding)', () => {
+  const original = fullTenant(['branding'])
   expectAllowed(() =>
     runHook({
       user: tenantAdmin(),
       originalDoc: original,
-      data: { hero: { ...(original.hero as Record<string, unknown>), years: { value: '25', unit: 'years' } } },
+      data: { branding: { ...(original.branding as Record<string, unknown>), tagline: 'New tagline' } },
     }),
   )
 })
@@ -309,13 +301,13 @@ test('forging a cleared value for a disabled group is rejected (data preserved)'
 })
 
 test('partial updates never erase untouched values via deep equality', () => {
-  const original = fullTenant(['contact', 'hero'])
+  const original = fullTenant(['contact', 'branding'])
   // Re-submitting branding exactly as stored (equal) is allowed — no erasure, no 403.
   expectAllowed(() =>
     runHook({
       user: tenantAdmin(),
       originalDoc: original,
-      data: { branding: original.branding, hero: { ...(original.hero as Record<string, unknown>), staff: { value: '1' } } },
+      data: { branding: { ...(original.branding as Record<string, unknown>), initials: 'ZZ' } },
     }),
   )
   assert.ok(settingValuesEqual({ a: { b: [1, 2] } }, { a: { b: [1, 2] } }))
@@ -331,7 +323,6 @@ test('a missing entitlement fails closed for a non-super user', () => {
   for (const [field, value] of [
     ['name', 'x'],
     ['branding', { initials: 'y' }],
-    ['hero', { years: { value: '0' } }],
     ['contact', { phone: 'z' }],
   ] as const) {
     expect403(() =>
@@ -351,7 +342,7 @@ test('an undefined entitlement also fails closed for a non-super user', () => {
 test('newly created tenants default to all setting groups (incl. socialPublishing)', () => {
   assert.deepEqual(
     ALL_TENANT_SETTING_GROUPS,
-    ['general', 'branding', 'hero', 'contact', 'socialPublishing'],
+    ['general', 'branding', 'contact', 'socialPublishing'],
   )
   assert.deepEqual(
     TENANT_SETTING_GROUPS.map((group) => group.value),
@@ -363,7 +354,7 @@ test('newly created tenants default to all setting groups (incl. socialPublishin
   assert.deepEqual(field?.defaultValue, ALL_TENANT_SETTING_GROUPS)
 })
 
-test('the versioned migration is registered and backfills every existing tenant with all four groups', () => {
+test('the versioned migration is registered and backfills every existing tenant with all setting groups', () => {
   // Read the migration index source (avoid importing type-only migration exports at runtime).
   const indexSource = readFileSync(
     new URL('../src/migrations/index.ts', import.meta.url),
@@ -398,7 +389,6 @@ test('field visibility mirrors the entitlement for a non-super admin', () => {
   assert.equal(fieldCondition('name')(doc, undefined, { user: tenantAdmin() }), true)
   assert.equal(fieldCondition('contact')(doc, undefined, { user: tenantAdmin() }), true)
   assert.equal(fieldCondition('branding')(doc, undefined, { user: tenantAdmin() }), false)
-  assert.equal(fieldCondition('hero')(doc, undefined, { user: tenantAdmin() }), false)
   assert.equal(
     fieldCondition('settingsEntitlement')(doc, undefined, { user: tenantAdmin() }),
     false,

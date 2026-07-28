@@ -6,13 +6,12 @@ import type { UserLike } from './userAccess'
 // Setting groups a platform super-admin can grant a tenant administrator. This entitlement is
 // separate from `features` (which gates public/content modules + their collections): it governs
 // only which tenant setting groups a non-super admin may edit for their own tenant.
-export type TenantSettingGroup = 'general' | 'branding' | 'hero' | 'contact' | 'socialPublishing'
+export type TenantSettingGroup = 'general' | 'branding' | 'contact' | 'socialPublishing'
 
 export const TENANT_SETTING_GROUPS = [
   // `general` controls the tenant display name (`name`) only.
   { value: 'general', label: { ar: 'البيانات العامة', en: 'General' } },
   { value: 'branding', label: { ar: 'الهوية', en: 'Branding' } },
-  { value: 'hero', label: { ar: 'إحصائيات الواجهة', en: 'Hero stats' } },
   { value: 'contact', label: { ar: 'معلومات التواصل', en: 'Contact' } },
   // `socialPublishing` governs the tenant's social auto-publish settings (master enable, default
   // Article auto-publish, and per-platform inclusion). A platform operator may withhold it.
@@ -28,7 +27,6 @@ export const ALL_TENANT_SETTING_GROUPS: TenantSettingGroup[] = TENANT_SETTING_GR
 const SETTING_GROUP_FIELDS: Record<TenantSettingGroup, readonly string[]> = {
   general: ['name'],
   branding: ['branding'],
-  hero: ['hero'],
   contact: ['contact'],
   socialPublishing: ['socialPublishing'],
 }

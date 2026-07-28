@@ -39,12 +39,6 @@ const seedTenant = {
   // Branding is intentionally NOT entitled — it holds stored data that must survive.
   settingsEntitlement: ['contact', 'general'],
   branding: { initials: 'IH', themeColor: '#15504f' },
-  hero: {
-    years: { value: '20' },
-    departments: { value: '12' },
-    patients: { value: '500k' },
-    staff: { value: '800' },
-  },
   contact: {
     phone: '+1000',
     email: 'integration@example.test',
@@ -139,8 +133,8 @@ test('real Local API: an entitled partial update preserves unrelated nested/arra
   const updated = await api().update({
     collection: 'tenants',
     id: tenantId,
-    // Only the entitled `contact` group is sent (with its nested hours array). Branding/hero are
-    // intentionally omitted — they must be preserved exactly.
+    // Only the entitled `contact` group is sent (with its nested hours array). Branding is
+    // intentionally omitted — it must be preserved exactly.
     data: { contact: { phone: '+2000', email: 'integration@example.test', hours: [{ day: 'Sun', time: '10-6' }] } },
     user: await adminReqUser(),
     overrideAccess: false,
@@ -156,7 +150,6 @@ test('real Local API: an entitled partial update preserves unrelated nested/arra
   // so assert the values that matter rather than the whole group shape).
   assert.equal(asGroup(updated.branding).initials, 'IH')
   assert.equal(asGroup(updated.branding).themeColor, '#15504f')
-  assert.equal(asGroup(asGroup(updated.hero).years).value, '20')
 })
 
 test('real Local API: a disabled-group change returns HTTP 403 and leaves stored data intact', async () => {
@@ -217,7 +210,7 @@ test('real Local API: a tenant admin cannot alter the entitlement (stored value 
     await api().update({
       collection: 'tenants',
       id: tenantId,
-      data: { settingsEntitlement: ['general', 'branding', 'hero', 'contact'] },
+      data: { settingsEntitlement: ['general', 'branding', 'contact'] },
       user: await adminReqUser(),
       overrideAccess: false,
     })

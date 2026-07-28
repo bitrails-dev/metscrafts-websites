@@ -70,8 +70,8 @@ test('tenant admins cannot change platform-controlled routing, capabilities, or 
   }
 })
 
-test('branding, hero, contact details, and social links remain entity-editable settings', () => {
-  for (const fieldName of ['branding', 'hero', 'contact']) {
+test('branding and contact details and social links remain entity-editable settings', () => {
+  for (const fieldName of ['branding', 'contact']) {
     const field = Tenants.fields.find((candidate) => 'name' in candidate && candidate.name === fieldName)
     assert.ok(field, `${fieldName} settings must exist`)
     assert.equal('access' in field ? field.access?.update : undefined, undefined)

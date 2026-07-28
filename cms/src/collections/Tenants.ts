@@ -36,19 +36,6 @@ export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]['key']
 // Changing a Tenant's type never silently overwrites its customized features; a super-admin can
 // explicitly reset them via the /reset-features-to-type-defaults endpoint.
 
-// Mirrors the old HospitalSettings.stat — a localized value+unit pair.
-const stat = (name: string, ar: string, en: string) => ({
-  name,
-  type: 'group' as const,
-  label: { ar, en },
-  fields: [
-    { name: 'value', type: 'text' as const, localized: true, required: true,
-      label: { ar: 'القيمة', en: 'Value' } },
-    { name: 'unit', type: 'text' as const, localized: true,
-      label: { ar: 'الوحدة', en: 'Unit' } },
-  ],
-})
-
 const superAdminFieldAccess: FieldAccess = ({ req }) => isSuperAdmin(req.user)
 
 const relationID = (relation: unknown): string | null => {
@@ -348,25 +335,12 @@ export const Tenants: CollectionConfig = {
       ],
     },
     {
-      name: 'hero',
-      type: 'group',
-      label: { ar: 'إحصائيات الواجهة', en: 'Hero stats' },
-      admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'hero') },
-      fields: [
-        stat('years', 'سنوات', 'Years'),
-        stat('departments', 'الأقسام', 'Departments'),
-        stat('patients', 'المرضى', 'Patients'),
-        stat('staff', 'الطاقم', 'Staff'),
-      ],
-    },
-    {
       name: 'contact',
       type: 'group',
       label: { ar: 'معلومات التواصل', en: 'Contact' },
       admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'contact') },
       fields: [
         { name: 'phone', type: 'text', label: { ar: 'الهاتف', en: 'Phone' } },
-        { name: 'emergencyNumber', type: 'text', label: { ar: 'رقم الطوارئ', en: 'Emergency number' } },
         { name: 'whatsapp', type: 'text', label: { ar: 'واتساب', en: 'WhatsApp' } },
         { name: 'email', type: 'email', label: { ar: 'البريد الإلكتروني', en: 'Email' } },
         { name: 'address', type: 'textarea', localized: true, label: { ar: 'العنوان', en: 'Address' } },

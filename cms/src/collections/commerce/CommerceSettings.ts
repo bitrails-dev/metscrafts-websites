@@ -1,5 +1,6 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Field, FieldAccess } from 'payload'
 import { encryptGatewaySecret } from '../../commerce/crypto'
+import { singlePerTenant } from '../utils/singlePerTenant'
 
 // Tenant-global commerce configuration. Exactly one document per tenant (a unique index on tenant_id
 // is created in the migration). Holds currency, tax mode, reservation TTL, the enabled payment
@@ -47,25 +48,6 @@ const handleSecrets: CollectionBeforeChangeHook = ({ data, operation, originalDo
   return data
 }
 
-// Enforce exactly one settings document per tenant: reject create if this tenant already has one.
-const singlePerTenant: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
-  if (operation !== 'create') return data
-  const tenantId = (data as { tenant?: { id?: number | string } | number | string }).tenant
-  const tid = tenantId && typeof tenantId === 'object' ? tenantId.id : tenantId
-  if (tid === undefined || tid === null) return data
-  const { totalDocs } = await req.payload.count({
-    collection: 'commerce-settings',
-    where: { tenant: { equals: tid } },
-    overrideAccess: true,
-    req,
-  })
-  if (totalDocs > 0) {
-    const { APIError } = await import('payload')
-    throw new APIError('This tenant already has a commerce-settings document.', 400, null, true)
-  }
-  return data
-}
-
 export const CommerceSettings: CollectionConfig = {
   slug: 'commerce-settings',
   labels: {
@@ -77,7 +59,7 @@ export const CommerceSettings: CollectionConfig = {
     useAsTitle: 'status',
     defaultColumns: ['status', 'currency', 'taxMode', 'sandbox'],
   },
-  hooks: { beforeChange: [handleSecrets, singlePerTenant] },
+  hooks: { beforeChange: [handleSecrets, singlePerTenant('commerce-settings')] },
   fields: [
     { name: 'status', type: 'select', required: true, defaultValue: 'setup',
       options: STATUS_OPTIONS.map((v) => ({ value: v, label: { en: v, ar: v } })),

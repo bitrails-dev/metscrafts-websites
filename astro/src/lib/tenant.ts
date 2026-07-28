@@ -7,11 +7,12 @@
 // tenants via the Payload Local API and rewrites the logo to /uploads/…; api mode hits the CMS
 // REST endpoint and points the logo at the CMS origin.
 import { getTenants, imageUrl } from "../cms";
+import type { HealthcareSettings } from "../cms/shared/healthcare-settings";
 
 export type TenantFeature =
   | "departments" | "team" | "articles" | "events"
   | "awards" | "achievements" | "testimonials" | "portal"
-  | "commerce";
+  | "commerce" | "healthcare";
 
 export interface Tenant {
   id: number | string;
@@ -26,7 +27,7 @@ export interface Tenant {
   logo?: string;
   themeColor?: string;
   contact: {
-    phone?: string; emergencyNumber?: string; whatsapp?: string; email?: string;
+    phone?: string; whatsapp?: string; email?: string;
     address?: string; addressAr?: string;
     social?: {
       facebookUrl?: string; instagramUrl?: string; xUrl?: string; threadsUrl?: string;
@@ -34,7 +35,6 @@ export interface Tenant {
     };
     hours?: Array<{ day: string; dayAr: string; time: string; timeAr: string }>;
   };
-  hero?: Record<string, { value?: string; valueAr?: string; unit?: string; unitAr?: string }>;
 }
 
 function loc(f: any): [string, string] {
@@ -77,7 +77,7 @@ function normalize(doc: any): Tenant {
     logo: imageUrl(doc.branding?.logo),
     themeColor: str(doc.branding?.themeColor),
     contact: {
-      phone: str(c.phone), emergencyNumber: str(c.emergencyNumber),
+      phone: str(c.phone),
       whatsapp: str(c.whatsapp), email: str(c.email),
       address: address || undefined, addressAr: addressAr || undefined,
       social: {
@@ -95,7 +95,6 @@ function normalize(doc: any): Tenant {
         return { day, dayAr, time, timeAr };
       }) : [],
     },
-    hero: doc.hero ?? undefined,
   };
 }
 
@@ -119,7 +118,7 @@ async function loadTenants(): Promise<Tenant[]> {
   }
 }
 
-const TENANT_SLUG = import.meta.env.TENANT_SLUG ?? (typeof process !== "undefined" ? process.env?.TENANT_SLUG : undefined);
+const TENANT_SLUG = import.meta.env?.TENANT_SLUG ?? (typeof process !== "undefined" ? process.env?.TENANT_SLUG : undefined);
 
 export async function resolveTenant(host: string): Promise<Tenant | undefined> {
   const tenants = await loadTenants();
@@ -140,7 +139,12 @@ export function hasFeature(tenant: Tenant | undefined, feature: TenantFeature): 
 // (top bar, footer, sidebar, contact) is tenant-driven, falling back to the i18n defaults for any
 // value the tenant leaves blank. Returns `strings` untouched when no tenant is resolved.
 // ponytail: per-page <title> and BaseLayout JSON-LD are handled separately; this covers the chrome.
-export function applyTenant(strings: any, tenant: Tenant | undefined, lang: "ar" | "en"): any {
+export function applyTenant(
+  strings: any,
+  tenant: Tenant | undefined,
+  lang: "ar" | "en",
+  healthcareSettings?: HealthcareSettings,
+): any {
   if (!tenant) return strings;
   const ar = lang === "ar";
   const c = tenant.contact;
@@ -160,7 +164,7 @@ export function applyTenant(strings: any, tenant: Tenant | undefined, lang: "ar"
         ...strings.contact?.details,
         address: (ar ? c.addressAr : c.address) || strings.contact?.details?.address,
         phone: c.phone || strings.contact?.details?.phone,
-        emergencyNumber: c.emergencyNumber || strings.contact?.details?.emergencyNumber,
+        emergencyNumber: healthcareSettings?.emergencyNumber || strings.contact?.details?.emergencyNumber,
         whatsapp: c.whatsapp || strings.contact?.details?.whatsapp,
         email: c.email || strings.contact?.details?.email,
         hours: hours.length ? hours : strings.contact?.details?.hours,

@@ -148,10 +148,8 @@ async function main() {
         features: ALL_FEATURES,
         name: DAMIETTA_GENERAL_HOSPITAL.ar.name,
         branding: { initials: 'DP', themeColor: '#15504f', tagline: DAMIETTA_GENERAL_HOSPITAL.ar.tagline, established: DAMIETTA_GENERAL_HOSPITAL.ar.established },
-        hero: DAMIETTA_GENERAL_HOSPITAL.ar.hero,
         contact: {
           phone: '+20 57 222 4340',
-          emergencyNumber: '12345',
           whatsapp: '+20 57 222 4340',
           email: 'nrmenelabd1234@yahoo.com',
           address: DAMIETTA_GENERAL_HOSPITAL.ar.address,
@@ -165,11 +163,33 @@ async function main() {
       data: {
         name: DAMIETTA_GENERAL_HOSPITAL.en.name,
         branding: { tagline: DAMIETTA_GENERAL_HOSPITAL.en.tagline, established: DAMIETTA_GENERAL_HOSPITAL.en.established },
-        hero: DAMIETTA_GENERAL_HOSPITAL.en.hero,
         contact: { address: DAMIETTA_GENERAL_HOSPITAL.en.address, hours: DAMIETTA_GENERAL_HOSPITAL.en.hours },
       },
     })
     console.log(`✓ created tenant 'damietta-general-hospital' (#${tenantId})`)
+  }
+
+  // 1b) Healthcare settings: hero stats + emergency number now live in the tenant-scoped
+  //     `healthcare-settings` vertical collection (one doc per tenant). Idempotent by tenant.
+  const hsFound = await payload.find({
+    collection: 'healthcare-settings',
+    where: { tenant: { equals: tenantId } },
+    limit: 1,
+    depth: 0,
+  })
+  if (hsFound.docs[0]) {
+    const hsId = hsFound.docs[0].id
+    await payload.update({ collection: 'healthcare-settings', id: hsId, locale: 'ar', overrideAccess: true,
+      data: { hero: DAMIETTA_GENERAL_HOSPITAL.ar.hero, emergencyNumber: '12345' } })
+    await payload.update({ collection: 'healthcare-settings', id: hsId, locale: 'en', overrideAccess: true,
+      data: { hero: DAMIETTA_GENERAL_HOSPITAL.en.hero } })
+    console.log(`✓ healthcare-settings updated (#${hsId})`)
+  } else {
+    const hs = await payload.create({ collection: 'healthcare-settings', locale: 'ar', overrideAccess: true,
+      data: { tenant: tenantId, hero: DAMIETTA_GENERAL_HOSPITAL.ar.hero, emergencyNumber: '12345' } })
+    await payload.update({ collection: 'healthcare-settings', id: hs.id, locale: 'en', overrideAccess: true,
+      data: { hero: DAMIETTA_GENERAL_HOSPITAL.en.hero } })
+    console.log(`✓ created healthcare-settings (#${hs.id})`)
   }
 
   // 2) Backfill tenant_id on every scoped table (raw SQL, idempotent).

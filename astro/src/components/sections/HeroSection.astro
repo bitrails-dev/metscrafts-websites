@@ -1,17 +1,23 @@
 ---
-import heroSettings from '../../content/settings/hero.json';
 import { localePath } from '../../i18n';
+import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
-const { lang, strings } = Astro.props;
+interface Props {
+	lang: 'ar' | 'en';
+	strings: any;
+	stats?: HealthcareSettings['stats'];
+}
+const { lang, strings, stats } = Astro.props;
 const isAr = lang === 'ar';
-const s = heroSettings.stats;
 
-const stats = [
-	{ label: strings.hero.stats.years,       value: isAr ? s.years.valueAr       : s.years.value,       unit: isAr ? s.years.unitAr       : s.years.unit       },
-	{ label: strings.hero.stats.departments, value: isAr ? s.departments.valueAr : s.departments.value, unit: isAr ? s.departments.unitAr : s.departments.unit },
-	{ label: strings.hero.stats.patients,    value: isAr ? s.patients.valueAr    : s.patients.value,    unit: isAr ? s.patients.unitAr    : s.patients.unit    },
-	{ label: strings.hero.stats.staff,       value: isAr ? s.staff.valueAr       : s.staff.value,       unit: isAr ? s.staff.unitAr       : s.staff.unit       },
-];
+// Hero stats come from the tenant's healthcare-settings doc (passed in by the page). When no
+// settings are resolved, no stat items render — the rail is omitted entirely.
+const items = stats ? [
+	{ label: strings.hero.stats.years,       value: isAr ? stats.years.valueAr       : stats.years.value,       unit: isAr ? stats.years.unitAr       : stats.years.unit       },
+	{ label: strings.hero.stats.departments, value: isAr ? stats.departments.valueAr : stats.departments.value, unit: isAr ? stats.departments.unitAr : stats.departments.unit },
+	{ label: strings.hero.stats.patients,    value: isAr ? stats.patients.valueAr    : stats.patients.value,    unit: isAr ? stats.patients.unitAr    : stats.patients.unit    },
+	{ label: strings.hero.stats.staff,       value: isAr ? stats.staff.valueAr       : stats.staff.value,       unit: isAr ? stats.staff.unitAr       : stats.staff.unit       },
+] : [];
 ---
 
 <section
@@ -112,24 +118,26 @@ const stats = [
 			</div>
 		</div>
 
-		<!-- Stats rail -->
-		<div
-			class='hero-stat-rail mt-16 pt-10 border-t border-ink-200 grid grid-cols-4 gap-8'
-		>
-			{
-				stats.map(s => (
-					<div>
-						<div class='font-display-ar font-medium text-4xl text-navy-900 leading-none lnum'>
-							{s.value}
-							{s.unit && (
-								<span class='text-teal-600 text-[0.7em]'>{s.unit}</span>
-							)}
+		{/* Stats rail — omitted when the tenant has no healthcare-settings */}
+		{items.length > 0 && (
+			<div
+				class='hero-stat-rail mt-16 pt-10 border-t border-ink-200 grid grid-cols-4 gap-8'
+			>
+				{
+					items.map(s => (
+						<div>
+							<div class='font-display-ar font-medium text-4xl text-navy-900 leading-none lnum'>
+								{s.value}
+								{s.unit && (
+									<span class='text-teal-600 text-[0.7em]'>{s.unit}</span>
+								)}
+							</div>
+							<div class='text-[13px] text-ink-500 mt-2'>{s.label}</div>
 						</div>
-						<div class='text-[13px] text-ink-500 mt-2'>{s.label}</div>
-					</div>
-				))
-			}
-		</div>
+					))
+				}
+			</div>
+		)}
 	</div>
 </section>
 

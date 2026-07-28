@@ -1,16 +1,21 @@
 ---
-import heroSettings from '../../content/settings/hero.json';
+import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
-const { lang, strings } = Astro.props;
+interface Props {
+	lang: 'ar' | 'en';
+	strings: any;
+	stats?: HealthcareSettings['stats'];
+}
+const { lang, strings, stats } = Astro.props;
 const isAr = lang === 'ar';
-const s = heroSettings.stats;
 
-const stats = [
-	{ value: isAr ? s.years.valueAr       : s.years.value,       unit: isAr ? s.years.unitAr       : s.years.unit,       label: strings.hero.stats.years       },
-	{ value: isAr ? s.departments.valueAr : s.departments.value, unit: isAr ? s.departments.unitAr : s.departments.unit, label: strings.hero.stats.departments },
-	{ value: isAr ? s.patients.valueAr    : s.patients.value,    unit: isAr ? s.patients.unitAr    : s.patients.unit,    label: strings.hero.stats.patients    },
-	{ value: isAr ? s.staff.valueAr       : s.staff.value,       unit: isAr ? s.staff.unitAr       : s.staff.unit,       label: strings.hero.stats.staff       },
-];
+// Stats come from the tenant's healthcare-settings doc (passed in by the page). No settings → no items.
+const items = stats ? [
+	{ value: isAr ? stats.years.valueAr       : stats.years.value,       unit: isAr ? stats.years.unitAr       : stats.years.unit,       label: strings.hero.stats.years       },
+	{ value: isAr ? stats.departments.valueAr : stats.departments.value, unit: isAr ? stats.departments.unitAr : stats.departments.unit, label: strings.hero.stats.departments },
+	{ value: isAr ? stats.patients.valueAr    : stats.patients.value,    unit: isAr ? stats.patients.unitAr    : stats.patients.unit,    label: strings.hero.stats.patients    },
+	{ value: isAr ? stats.staff.valueAr       : stats.staff.value,       unit: isAr ? stats.staff.unitAr       : stats.staff.unit,       label: strings.hero.stats.staff       },
+] : [];
 ---
 
 <!-- Stats Band -->
@@ -38,7 +43,7 @@ const stats = [
 
 		<!-- Stats grid -->
 		<div class="stats-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 32px;">
-			{stats.map((s) => (
+			{items.map((s) => (
 				<div class="text-center">
 					<div class="font-display-ar font-medium text-white leading-none" style="font-size: 72px; line-height: 1;">
 						{s.value}<span class="text-teal-400 text-[0.5em]">{s.unit}</span>

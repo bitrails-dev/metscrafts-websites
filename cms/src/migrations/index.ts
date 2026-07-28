@@ -28,6 +28,8 @@ import * as migration_20260722_100100_store_prices_enable_backfill from './20260
 import * as migration_20260722_100200_store_orders_rels_fk_repoint from './20260722_100200_store_orders_rels_fk_repoint';
 import * as migration_20260722_100250_store_orders_rels_plugin_slug from './20260722_100250_store_orders_rels_plugin_slug';
 import * as migration_20260722_100300_store_products_localization from './20260722_100300_store_products_localization';
+import * as migration_20260727_130000_add_and_backfill_healthcare_settings from './20260727_130000_add_and_backfill_healthcare_settings';
+import * as migration_20260727_130100_drop_healthcare_fields_from_tenants from './20260727_130100_drop_healthcare_fields_from_tenants';
 
 export const migrations = [
   {
@@ -179,5 +181,15 @@ export const migrations = [
     up: migration_20260722_100300_store_products_localization.up,
     down: migration_20260722_100300_store_products_localization.down,
     name: '20260722_100300_store_products_localization',
+  },
+  {
+    up: migration_20260727_130000_add_and_backfill_healthcare_settings.up,
+    down: migration_20260727_130000_add_and_backfill_healthcare_settings.down,
+    name: '20260727_130000_add_and_backfill_healthcare_settings',
+  },
+  {
+    up: migration_20260727_130100_drop_healthcare_fields_from_tenants.up,
+    down: migration_20260727_130100_drop_healthcare_fields_from_tenants.down,
+    name: '20260727_130100_drop_healthcare_fields_from_tenants',
   },
 ];
