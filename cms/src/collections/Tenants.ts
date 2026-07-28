@@ -1,6 +1,7 @@
-import type { CollectionBeforeChangeHook, CollectionConfig, FieldAccess } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig, Field, FieldAccess } from 'payload'
 import { APIError } from 'payload'
 import { getUserTenantIDs, isSuperAdmin, isTenantAdmin } from '../access/userAccess'
+import { enforceTenantDocumentLocales } from '../access/localizedLocaleAccess'
 import type { UserLike } from '../access/userAccess'
 import {
   ALL_TENANT_SETTING_GROUPS,
@@ -171,6 +172,184 @@ const copyTypeDefaultFeatures: CollectionBeforeChangeHook = async ({
   return data
 }
 
+// §3.2 — extracted as a named const so enforceTenantDocumentLocales (registered on the beforeChange
+// hook below) is wired with the exact field tree the collection ships, without re-declaring fields
+// or introducing a circular import. Declared BEFORE the collection so the hook closure captures the
+// initialized array (not a TDZ reference). Field order is unchanged.
+const tenantFields: Field[] = [
+  { name: 'name', type: 'text', required: true, localized: true,
+    label: { ar: 'الاسم', en: 'Name' },
+    admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'general') } },
+  { name: 'slug', type: 'text', required: true, unique: true,
+    label: { ar: 'المعرّف', en: 'Slug' },
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Lowercase, hyphenated. Used by TENANT_SLUG and as a stable key.' } },
+  // Relationship to the extensible `tenant-types` collection. A super-admin can create a Tenant
+  // Type inline from this field. Assignment/update is super-admin-only (platform-managed).
+  { name: 'type', type: 'relationship', relationTo: 'tenant-types', required: true,
+    label: { ar: 'النوع', en: 'Type' },
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Entity type. Drives the default feature template copied into new entities.' } },
+  // UI-only: when a super-admin selects/changes the `type`, live-apply that type's `defaultFeatures`
+  // template to `features` (Capabilities). Renders and stores nothing — the component reads `type`
+  // and writes `features`. Super-admin-gated (both fields are super-admin-update-only).
+  { name: 'applyTypeTemplate', type: 'ui',
+    admin: { components: { Field: '/src/admin/ApplyTypeTemplate#default' },
+      condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null) } },
+  { name: 'domains', type: 'text', hasMany: true,
+    label: { ar: 'النطاقات', en: 'Domains' },
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Hostnames that map to this tenant, e.g. dgh.bitrail.dev, localhost.' } },
+  { name: 'features', type: 'select', hasMany: true, options: TENANT_FEATURES,
+    label: { ar: 'القدرات', en: 'Capabilities' },
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Controls public sections and the related Payload admin collections.' } },
+  {
+    name: 'languages', type: 'select', hasMany: true,
+    options: PLATFORM_LOCALE_OPTIONS,
+    defaultValue: FALLBACK_PLATFORM_LANGUAGES,  // sanctioned constant; Payload applies before collection beforeChange
+    label: TENANT_LANGUAGE_FIELD_LABELS.languages,
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Locales published on this tenant. Drives switcher + route/locale gating. Platform-managed.' },
+  },
+  {
+    name: 'defaultLanguage', type: 'select',
+    options: PLATFORM_LOCALE_OPTIONS,
+    // NO defaultValue — Payload would pre-apply the platform default on create and defeat the derive branch (BLK-5).
+    label: TENANT_LANGUAGE_FIELD_LABELS.defaultLanguage,
+    access: { update: superAdminFieldAccess },
+    admin: { description: 'Fallback locale for missing translations; target of the `/` redirect when it differs from the unprefixed locale.' },
+  },
+  // Which tenant setting groups a non-super admin may edit for this tenant. Separate from
+  // `features` (public/content modules) — governs only editable tenant settings. Defaults to all
+  // groups for new/existing tenants; a super-admin may restrict it.
+  { name: 'settingsEntitlement', type: 'select', hasMany: true,
+    options: TENANT_SETTING_GROUPS,
+    defaultValue: ALL_TENANT_SETTING_GROUPS,
+    label: { ar: 'صلاحيات الإعدادات', en: 'Editable settings' },
+    access: { update: superAdminFieldAccess },
+    admin: {
+      position: 'sidebar',
+      description: 'Tenant setting groups this tenant administrator may edit. Platform-managed.',
+      condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null),
+    } },
+  {
+    name: 'branding',
+    type: 'group',
+    label: { ar: 'الهوية', en: 'Branding' },
+    admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'branding') },
+    fields: [
+      { name: 'initials', type: 'text', label: { ar: 'الأحرف الأولى', en: 'Initials' } },
+      { name: 'tagline', type: 'text', localized: true, label: { ar: 'الشعار النصي', en: 'Tagline' } },
+      { name: 'established', type: 'text', localized: true, label: { ar: 'سنة التأسيس', en: 'Established' } },
+      { name: 'logo', type: 'upload', relationTo: 'media', label: { ar: 'الشعار', en: 'Logo' } },
+      { name: 'themeColor', type: 'text', label: { ar: 'اللون الأساسي', en: 'Theme color' },
+        admin: { description: 'Hex, e.g. #15504f.' } },
+    ],
+  },
+  {
+    name: 'contact',
+    type: 'group',
+    label: { ar: 'معلومات التواصل', en: 'Contact' },
+    admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'contact') },
+    fields: [
+      { name: 'phone', type: 'text', label: { ar: 'الهاتف', en: 'Phone' } },
+      { name: 'whatsapp', type: 'text', label: { ar: 'واتساب', en: 'WhatsApp' } },
+      { name: 'email', type: 'email', label: { ar: 'البريد الإلكتروني', en: 'Email' } },
+      { name: 'address', type: 'textarea', localized: true, label: { ar: 'العنوان', en: 'Address' } },
+      {
+        name: 'social',
+        type: 'group',
+        label: { ar: 'وسائل التواصل', en: 'Social' },
+        // One optional profile URL per platform. Empty is allowed; a non-empty value must be a
+        // valid http(s) URL. Existing facebook/x/youtube values keep their column names.
+        fields: SOCIAL_PLATFORMS.map(({ key, label }) => ({
+          name: `${key}Url`,
+          type: 'text' as const,
+          label,
+          validate: (value: unknown) => {
+            if (value === undefined || value === null || value === '') return true
+            return /^https?:\/\//i.test(String(value)) || 'Enter a valid http(s) URL.'
+          },
+        })),
+      },
+      {
+        name: 'hours',
+        type: 'array',
+        label: { ar: 'ساعات العمل', en: 'Hours' },
+        fields: [
+          { name: 'day', type: 'text', localized: true, required: true, label: { ar: 'اليوم', en: 'Day' } },
+          { name: 'time', type: 'text', localized: true, required: true, label: { ar: 'الوقت', en: 'Time' } },
+        ],
+      },
+    ],
+  },
+  // Tenant-controlled social auto-publishing. Gated by the `socialPublishing` setting
+  // entitlement (a platform operator may withhold it). `enabled` is the master switch;
+  // `defaultAutoPublish` is the default applied to newly created Articles when they omit it;
+  // `includedPlatforms` selects which of the eight platforms each auto-published Article is sent
+  // to. WhatsApp is intentionally absent (contact channel, not a public feed). Per-platform
+  // OAuth connections live in a separate collection (Task E) and are joined in the publishing UI.
+  {
+    name: 'socialPublishing',
+    type: 'group',
+    label: { ar: 'النشر التلقائي على وسائل التواصل', en: 'Social auto-publishing' },
+    admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing') },
+    fields: [
+      {
+        name: 'enabled',
+        type: 'checkbox',
+        defaultValue: false,
+        label: { ar: 'تفعيل النشر التلقائي', en: 'Enable auto-publishing' },
+        admin: {
+          description:
+            'Master switch. When off, no Article is auto-published regardless of per-platform toggles.',
+        },
+      },
+      {
+        name: 'defaultAutoPublish',
+        type: 'checkbox',
+        defaultValue: false,
+        label: { ar: 'النشر التلقائي للمقالات الجديدة افتراضيًا', en: 'Auto-publish new Articles by default' },
+      },
+      {
+        name: 'includedPlatforms',
+        type: 'select',
+        hasMany: true,
+        options: SOCIAL_PLATFORMS.map(({ key, label }) => ({ value: key, label })),
+        label: { ar: 'المنصات المشمولة', en: 'Included platforms' },
+        admin: {
+          description:
+            'Platforms each auto-published Article is sent to. Connect each platform in the publishing panel (requires platform app configuration / approval).',
+        },
+      },
+    ],
+  },
+  // Super-admin-only reset control on existing documents. Confirms, calls the reset endpoint,
+  // surfaces success/error, and reloads the document so stored state is visible. Hidden from
+  // tenant admins and on the create form (no id yet).
+  {
+    name: 'resetFeatures',
+    type: 'ui',
+    label: { ar: 'إعادة الضبط', en: 'Reset' },
+    admin: {
+      components: { Field: '/src/admin/ResetTenantFeatures#default' },
+      condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null),
+    },
+  },
+  // Social connection panel: per-platform Connect/Disconnect + last result. Shown only when the
+  // socialPublishing group is visible (super-admin or entitled tenant admin), on existing docs.
+  {
+    name: 'socialConnections',
+    type: 'ui',
+    label: { ar: 'اتصالات التواصل', en: 'Social connections' },
+    admin: {
+      components: { Field: '/src/admin/SocialConnectionsPanel#default' },
+      condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing'),
+    },
+  },
+]
+
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
   labels: {
@@ -198,7 +377,16 @@ export const Tenants: CollectionConfig = {
   hooks: {
     // Enforces, server-side, that a non-super admin edits only assigned tenants and only the
     // setting groups enabled by that tenant's `settingsEntitlement`. Throws 403 on violations.
-    beforeChange: [enforceTenantSettingsEntitlement, copyTypeDefaultFeatures, validateTenantLanguages],
+    //
+    // §3.2 — `enforceTenantDocumentLocales` runs LAST, after `validateTenantLanguages`, so a
+    // languages/default update and the localized Tenants identity/branding/contact fields see the
+    // same effective allowed set. The first three hooks retain their Phase-1 order.
+    beforeChange: [
+      enforceTenantSettingsEntitlement,
+      copyTypeDefaultFeatures,
+      validateTenantLanguages,
+      enforceTenantDocumentLocales(tenantFields),
+    ],
   },
   endpoints: [
     // POST /api/tenants/:id/reset-features-to-type-defaults
@@ -337,177 +525,5 @@ export const Tenants: CollectionConfig = {
       },
     },
   ],
-  fields: [
-    { name: 'name', type: 'text', required: true, localized: true,
-      label: { ar: 'الاسم', en: 'Name' },
-      admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'general') } },
-    { name: 'slug', type: 'text', required: true, unique: true,
-      label: { ar: 'المعرّف', en: 'Slug' },
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Lowercase, hyphenated. Used by TENANT_SLUG and as a stable key.' } },
-    // Relationship to the extensible `tenant-types` collection. A super-admin can create a Tenant
-    // Type inline from this field. Assignment/update is super-admin-only (platform-managed).
-    { name: 'type', type: 'relationship', relationTo: 'tenant-types', required: true,
-      label: { ar: 'النوع', en: 'Type' },
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Entity type. Drives the default feature template copied into new entities.' } },
-    // UI-only: when a super-admin selects/changes the `type`, live-apply that type's `defaultFeatures`
-    // template to `features` (Capabilities). Renders and stores nothing — the component reads `type`
-    // and writes `features`. Super-admin-gated (both fields are super-admin-update-only).
-    { name: 'applyTypeTemplate', type: 'ui',
-      admin: { components: { Field: '/src/admin/ApplyTypeTemplate#default' },
-        condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null) } },
-    { name: 'domains', type: 'text', hasMany: true,
-      label: { ar: 'النطاقات', en: 'Domains' },
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Hostnames that map to this tenant, e.g. dgh.bitrail.dev, localhost.' } },
-    { name: 'features', type: 'select', hasMany: true, options: TENANT_FEATURES,
-      label: { ar: 'القدرات', en: 'Capabilities' },
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Controls public sections and the related Payload admin collections.' } },
-    {
-      name: 'languages', type: 'select', hasMany: true,
-      options: PLATFORM_LOCALE_OPTIONS,
-      defaultValue: FALLBACK_PLATFORM_LANGUAGES,  // sanctioned constant; Payload applies before collection beforeChange
-      label: TENANT_LANGUAGE_FIELD_LABELS.languages,
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Locales published on this tenant. Drives switcher + route/locale gating. Platform-managed.' },
-    },
-    {
-      name: 'defaultLanguage', type: 'select',
-      options: PLATFORM_LOCALE_OPTIONS,
-      // NO defaultValue — Payload would pre-apply the platform default on create and defeat the derive branch (BLK-5).
-      label: TENANT_LANGUAGE_FIELD_LABELS.defaultLanguage,
-      access: { update: superAdminFieldAccess },
-      admin: { description: 'Fallback locale for missing translations; target of the `/` redirect when it differs from the unprefixed locale.' },
-    },
-    // Which tenant setting groups a non-super admin may edit for this tenant. Separate from
-    // `features` (public/content modules) — governs only editable tenant settings. Defaults to all
-    // groups for new/existing tenants; a super-admin may restrict it.
-    { name: 'settingsEntitlement', type: 'select', hasMany: true,
-      options: TENANT_SETTING_GROUPS,
-      defaultValue: ALL_TENANT_SETTING_GROUPS,
-      label: { ar: 'صلاحيات الإعدادات', en: 'Editable settings' },
-      access: { update: superAdminFieldAccess },
-      admin: {
-        position: 'sidebar',
-        description: 'Tenant setting groups this tenant administrator may edit. Platform-managed.',
-        condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null),
-      } },
-    {
-      name: 'branding',
-      type: 'group',
-      label: { ar: 'الهوية', en: 'Branding' },
-      admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'branding') },
-      fields: [
-        { name: 'initials', type: 'text', label: { ar: 'الأحرف الأولى', en: 'Initials' } },
-        { name: 'tagline', type: 'text', localized: true, label: { ar: 'الشعار النصي', en: 'Tagline' } },
-        { name: 'established', type: 'text', localized: true, label: { ar: 'سنة التأسيس', en: 'Established' } },
-        { name: 'logo', type: 'upload', relationTo: 'media', label: { ar: 'الشعار', en: 'Logo' } },
-        { name: 'themeColor', type: 'text', label: { ar: 'اللون الأساسي', en: 'Theme color' },
-          admin: { description: 'Hex, e.g. #15504f.' } },
-      ],
-    },
-    {
-      name: 'contact',
-      type: 'group',
-      label: { ar: 'معلومات التواصل', en: 'Contact' },
-      admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'contact') },
-      fields: [
-        { name: 'phone', type: 'text', label: { ar: 'الهاتف', en: 'Phone' } },
-        { name: 'whatsapp', type: 'text', label: { ar: 'واتساب', en: 'WhatsApp' } },
-        { name: 'email', type: 'email', label: { ar: 'البريد الإلكتروني', en: 'Email' } },
-        { name: 'address', type: 'textarea', localized: true, label: { ar: 'العنوان', en: 'Address' } },
-        {
-          name: 'social',
-          type: 'group',
-          label: { ar: 'وسائل التواصل', en: 'Social' },
-          // One optional profile URL per platform. Empty is allowed; a non-empty value must be a
-          // valid http(s) URL. Existing facebook/x/youtube values keep their column names.
-          fields: SOCIAL_PLATFORMS.map(({ key, label }) => ({
-            name: `${key}Url`,
-            type: 'text' as const,
-            label,
-            validate: (value: unknown) => {
-              if (value === undefined || value === null || value === '') return true
-              return /^https?:\/\//i.test(String(value)) || 'Enter a valid http(s) URL.'
-            },
-          })),
-        },
-        {
-          name: 'hours',
-          type: 'array',
-          label: { ar: 'ساعات العمل', en: 'Hours' },
-          fields: [
-            { name: 'day', type: 'text', localized: true, required: true, label: { ar: 'اليوم', en: 'Day' } },
-            { name: 'time', type: 'text', localized: true, required: true, label: { ar: 'الوقت', en: 'Time' } },
-          ],
-        },
-      ],
-    },
-    // Tenant-controlled social auto-publishing. Gated by the `socialPublishing` setting
-    // entitlement (a platform operator may withhold it). `enabled` is the master switch;
-    // `defaultAutoPublish` is the default applied to newly created Articles when they omit it;
-    // `includedPlatforms` selects which of the eight platforms each auto-published Article is sent
-    // to. WhatsApp is intentionally absent (contact channel, not a public feed). Per-platform
-    // OAuth connections live in a separate collection (Task E) and are joined in the publishing UI.
-    {
-      name: 'socialPublishing',
-      type: 'group',
-      label: { ar: 'النشر التلقائي على وسائل التواصل', en: 'Social auto-publishing' },
-      admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing') },
-      fields: [
-        {
-          name: 'enabled',
-          type: 'checkbox',
-          defaultValue: false,
-          label: { ar: 'تفعيل النشر التلقائي', en: 'Enable auto-publishing' },
-          admin: {
-            description:
-              'Master switch. When off, no Article is auto-published regardless of per-platform toggles.',
-          },
-        },
-        {
-          name: 'defaultAutoPublish',
-          type: 'checkbox',
-          defaultValue: false,
-          label: { ar: 'النشر التلقائي للمقالات الجديدة افتراضيًا', en: 'Auto-publish new Articles by default' },
-        },
-        {
-          name: 'includedPlatforms',
-          type: 'select',
-          hasMany: true,
-          options: SOCIAL_PLATFORMS.map(({ key, label }) => ({ value: key, label })),
-          label: { ar: 'المنصات المشمولة', en: 'Included platforms' },
-          admin: {
-            description:
-              'Platforms each auto-published Article is sent to. Connect each platform in the publishing panel (requires platform app configuration / approval).',
-          },
-        },
-      ],
-    },
-    // Super-admin-only reset control on existing documents. Confirms, calls the reset endpoint,
-    // surfaces success/error, and reloads the document so stored state is visible. Hidden from
-    // tenant admins and on the create form (no id yet).
-    {
-      name: 'resetFeatures',
-      type: 'ui',
-      label: { ar: 'إعادة الضبط', en: 'Reset' },
-      admin: {
-        components: { Field: '/src/admin/ResetTenantFeatures#default' },
-        condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null),
-      },
-    },
-    // Social connection panel: per-platform Connect/Disconnect + last result. Shown only when the
-    // socialPublishing group is visible (super-admin or entitled tenant admin), on existing docs.
-    {
-      name: 'socialConnections',
-      type: 'ui',
-      label: { ar: 'اتصالات التواصل', en: 'Social connections' },
-      admin: {
-        components: { Field: '/src/admin/SocialConnectionsPanel#default' },
-        condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing'),
-      },
-    },
-  ],
+  fields: tenantFields,
 }

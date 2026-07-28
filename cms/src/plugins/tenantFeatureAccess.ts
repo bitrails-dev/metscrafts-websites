@@ -10,6 +10,7 @@ import type {
   Where,
 } from 'payload'
 import { getUserTenantIDs, isSuperAdmin } from '../access/userAccess'
+import { enforceTenantLocales, hasLocalizedField } from '../access/localizedLocaleAccess'
 import type { TenantFeature } from '../collections/tenantFeatures'
 import { verticalSettingsFeatureMap } from '../verticals/registry'
 
@@ -269,9 +270,16 @@ export const tenantFeatureAccessPlugin = (): Plugin => (incomingConfig: Config):
     }
 
     collection.hooks = collection.hooks ?? {}
+    // §3.2 — hook order is mandatory: `enforceSelectedTenant` runs FIRST so tenant-admin creates
+    // receive the injected tenant before locale enforcement; super-admin creates MUST supply
+    // `data.tenant`. `enforceTenantLocales` runs immediately after, gated on the presence of any
+    // reachable localized field, so non-localized collections pay zero extra cost.
     collection.hooks.beforeChange = [
       ...(collection.hooks.beforeChange ?? []),
       enforceSelectedTenant(policy),
+      ...(hasLocalizedField(collection.fields ?? [])
+        ? [enforceTenantLocales(collection.fields ?? [])]
+        : []),
     ]
 
     // Surface tenant ownership for super-admin aggregate lists. The multi-tenant plugin injects the
