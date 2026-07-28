@@ -7,6 +7,8 @@ import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { ecommercePlugin, defaultCartItemMatcher } from '@payloadcms/plugin-ecommerce'
 import { en } from '@payloadcms/translations/languages/en'
 import { ar } from '@payloadcms/translations/languages/ar'
+import { es } from '@payloadcms/translations/languages/es'
+import { PLATFORM_LOCALES, DEFAULT_PLATFORM_LOCALE } from './collections/tenantLocales'
 
 import { Users } from './collections/Users'
 import { Doctors } from './collections/Doctors'
@@ -190,15 +192,12 @@ export default buildConfig({
   },
   editor: lexicalEditor(),
   i18n: {
-    supportedLanguages: { ar, en },
-    fallbackLanguage: 'ar',
+    supportedLanguages: { ar, en, es },
+    fallbackLanguage: DEFAULT_PLATFORM_LOCALE,
   },
   localization: {
-    locales: [
-      { label: 'العربية', code: 'ar' },
-      { label: 'English', code: 'en' },
-    ],
-    defaultLocale: 'ar',
+    locales: PLATFORM_LOCALES.map((l) => ({ code: l.value, label: l.native })),
+    defaultLocale: DEFAULT_PLATFORM_LOCALE,
     fallback: true,
   },
   // NOTE: Payload config itself keeps the `|| ''` fallback so the config can boot for migration

@@ -38,6 +38,8 @@ export const TENANT_PLATFORM_FIELDS = [
   'domains',
   'features',
   'settingsEntitlement',
+  'languages',
+  'defaultLanguage',
 ] as const
 
 const forbidden = (message: string): never => {

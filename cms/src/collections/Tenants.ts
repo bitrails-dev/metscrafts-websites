@@ -1,4 +1,5 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, FieldAccess } from 'payload'
+import { APIError } from 'payload'
 import { getUserTenantIDs, isSuperAdmin, isTenantAdmin } from '../access/userAccess'
 import type { UserLike } from '../access/userAccess'
 import {
@@ -10,7 +11,64 @@ import {
 import type { TenantSettingGroup } from '../access/tenantSettings'
 import type { Tenant } from '../payload-types'
 import { TENANT_FEATURES } from './tenantFeatures'
+import {
+  DEFAULT_PLATFORM_LOCALE,
+  FALLBACK_PLATFORM_LANGUAGES,
+  PLATFORM_LOCALE_CODES,
+  PLATFORM_LOCALE_OPTIONS,
+  TENANT_LANGUAGE_FIELD_LABELS,
+  type PlatformLocale,
+} from './tenantLocales'
 import { ALL_PLATFORMS, PLATFORMS, hasOAuth, platformLabel, platformMeta } from '../social/platforms'
+
+// §1.4 — create-deriving, update-rejecting, timing-agnostic (BLK-5). Derives `defaultLanguage` on
+// create (no defaultValue on the field: Payload field validation runs before this hook), rejects an
+// explicit invalid default on update, and preserves stored values on unrelated partial updates.
+const hasOwn = (o: unknown, k: PropertyKey): boolean =>
+  typeof o === 'object' && o !== null && Object.prototype.hasOwnProperty.call(o, k)
+
+export const validateTenantLanguages: CollectionBeforeChangeHook = ({ data, operation, originalDoc }) => {
+  if (operation !== 'create' && operation !== 'update') return data
+  const incoming = data as Record<string, unknown>
+  const stored = (originalDoc ?? {}) as Record<string, unknown>
+
+  // languages: validate only when provided.
+  let effective: PlatformLocale[]
+  if (hasOwn(incoming, 'languages')) {
+    const raw = incoming.languages
+    if (!Array.isArray(raw)) throw new APIError('languages must be an array.', 400, null, true)
+    const seen = new Set<PlatformLocale>(); const cleaned: PlatformLocale[] = []
+    for (const code of raw) {
+      if (!PLATFORM_LOCALE_CODES.includes(code as PlatformLocale))
+        throw new APIError(`Unknown locale code: ${String(code)}.`, 400, null, true)
+      const c = code as PlatformLocale
+      if (seen.has(c)) throw new APIError(`Duplicate locale code: ${c}.`, 400, null, true)
+      seen.add(c); cleaned.push(c)
+    }
+    if (cleaned.length === 0) throw new APIError('languages cannot be empty.', 400, null, true)
+    incoming.languages = cleaned; effective = cleaned
+  } else {
+    effective = Array.isArray(stored.languages) ? (stored.languages as PlatformLocale[]) : FALLBACK_PLATFORM_LANGUAGES
+  }
+
+  const inSet = (c: unknown): c is PlatformLocale =>
+    typeof c === 'string' && PLATFORM_LOCALE_CODES.includes(c as PlatformLocale) && effective.includes(c as PlatformLocale)
+
+  if (operation === 'create') {
+    // Derive: honor an explicit valid default, else prefer the platform default if in set, else effective[0].
+    const explicit = hasOwn(incoming, 'defaultLanguage') ? incoming.defaultLanguage : undefined
+    incoming.defaultLanguage = inSet(explicit) ? explicit
+      : effective.includes(DEFAULT_PLATFORM_LOCALE) ? DEFAULT_PLATFORM_LOCALE : effective[0]
+  } else {
+    // Update: preserve an omitted default, but reject any update whose effective default is outside
+    // the effective language set. This includes languages-only updates that remove the stored default.
+    const defaultWasProvided = hasOwn(incoming, 'defaultLanguage')
+    const effectiveDefault = defaultWasProvided ? incoming.defaultLanguage : stored.defaultLanguage
+    if ((defaultWasProvided || hasOwn(incoming, 'languages')) && !inSet(effectiveDefault))
+      throw new APIError(`defaultLanguage must be one of this tenant's languages: ${effective.join(', ')}.`, 400, null, true)
+  }
+  return data
+}
 
 // The eight public-feed social platforms. A tenant links a profile URL per platform under
 // `contact.social`, and may opt each platform into auto-publishing under `socialPublishing`.
@@ -140,7 +198,7 @@ export const Tenants: CollectionConfig = {
   hooks: {
     // Enforces, server-side, that a non-super admin edits only assigned tenants and only the
     // setting groups enabled by that tenant's `settingsEntitlement`. Throws 403 on violations.
-    beforeChange: [enforceTenantSettingsEntitlement, copyTypeDefaultFeatures],
+    beforeChange: [enforceTenantSettingsEntitlement, copyTypeDefaultFeatures, validateTenantLanguages],
   },
   endpoints: [
     // POST /api/tenants/:id/reset-features-to-type-defaults
@@ -307,6 +365,22 @@ export const Tenants: CollectionConfig = {
       label: { ar: 'القدرات', en: 'Capabilities' },
       access: { update: superAdminFieldAccess },
       admin: { description: 'Controls public sections and the related Payload admin collections.' } },
+    {
+      name: 'languages', type: 'select', hasMany: true,
+      options: PLATFORM_LOCALE_OPTIONS,
+      defaultValue: FALLBACK_PLATFORM_LANGUAGES,  // sanctioned constant; Payload applies before collection beforeChange
+      label: TENANT_LANGUAGE_FIELD_LABELS.languages,
+      access: { update: superAdminFieldAccess },
+      admin: { description: 'Locales published on this tenant. Drives switcher + route/locale gating. Platform-managed.' },
+    },
+    {
+      name: 'defaultLanguage', type: 'select',
+      options: PLATFORM_LOCALE_OPTIONS,
+      // NO defaultValue — Payload would pre-apply the platform default on create and defeat the derive branch (BLK-5).
+      label: TENANT_LANGUAGE_FIELD_LABELS.defaultLanguage,
+      access: { update: superAdminFieldAccess },
+      admin: { description: 'Fallback locale for missing translations; target of the `/` redirect when it differs from the unprefixed locale.' },
+    },
     // Which tenant setting groups a non-super admin may edit for this tenant. Separate from
     // `features` (public/content modules) — governs only editable tenant settings. Defaults to all
     // groups for new/existing tenants; a super-admin may restrict it.
