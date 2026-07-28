@@ -1,4 +1,33 @@
-export type Locale = "ar" | "en";
+import {
+  FALLBACK_LANGUAGES,
+  UNPREFIXED_LOCALE,
+  pickLocalized,
+  type Locale,
+} from "../../i18n";
+
+// External portal contract: the backend serializes localized name fields as
+// snake_case `name_ar`/`name_en`. Adapt them to the locale-map model without
+// changing the external API contract (§2.4 transform 5).
+type ExternalPortalName = { name_ar?: string | null; name_en?: string | null };
+const EXTERNAL_PORTAL_SECONDARY = FALLBACK_LANGUAGES.find(
+  (code) => code !== UNPREFIXED_LOCALE,
+);
+if (!EXTERNAL_PORTAL_SECONDARY) throw new Error("External portal requires a secondary fallback locale.");
+
+export function portalName(
+  item: ExternalPortalName | null | undefined,
+  lang: Locale,
+  defaultLanguage: Locale,
+): string {
+  const values: Partial<Record<Locale, string>> = {
+    [UNPREFIXED_LOCALE]: item?.name_ar ?? "",
+    [EXTERNAL_PORTAL_SECONDARY]: item?.name_en ?? "",
+  };
+  return pickLocalized(values, lang, defaultLanguage)
+    || values[EXTERNAL_PORTAL_SECONDARY]
+    || values[UNPREFIXED_LOCALE]
+    || "";
+}
 
 const apiBase = (import.meta as any).env?.PUBLIC_PORTAL_API_BASE || "http://localhost:8080";
 

@@ -1,8 +1,14 @@
 ---
 import { getCollection } from "../../lib/cms";
+import { isRTL, pickLocalized, type Locale } from "../../i18n";
 
-const { lang, strings } = Astro.props;
-const isAr = lang === "ar";
+interface Props {
+	lang: Locale;
+	strings: any;
+	defaultLanguage: Locale;
+}
+const { lang, strings, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
 const awards = await getCollection("awards", Astro.locals.tenant?.id);
 const sortedAwards = awards.sort((a, b) => b.data.year - a.data.year);
 ---
@@ -15,7 +21,7 @@ const sortedAwards = awards.sort((a, b) => b.data.year - a.data.year);
 			<div>
 				<div class="inline-flex items-center gap-2.5 mb-4">
 					<div class="w-8 h-px bg-teal-600"></div>
-					<p class="h-eyebrow">{isAr ? 'تقدير وتميز' : 'Recognition'}</p>
+					<p class="h-eyebrow">{isRTL(lang) ? 'تقدير وتميز' : 'Recognition'}</p>
 				</div>
 				<h2 class="font-display-ar font-medium text-navy-900 leading-none tracking-tight" style="font-size: clamp(36px, 4vw, 56px); line-height: 1.1;">
 					{strings.achievements.awardsTitle}
@@ -29,7 +35,7 @@ const sortedAwards = awards.sort((a, b) => b.data.year - a.data.year);
 		<!-- Awards list -->
 		<div class="space-y-0">
 			{sortedAwards.map((award, i) => {
-				const title = isAr ? award.data.nameAr : award.data.name;
+				const title = pickLocalized(award.data.name, lang, fallback);
 				return (
 					<div class="awards-row grid items-center gap-6 py-6 border-t border-ink-100 first:border-t-0" style="grid-template-columns: 80px 1fr auto auto;">
 						<!-- Year -->

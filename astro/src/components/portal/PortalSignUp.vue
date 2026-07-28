@@ -77,10 +77,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { portalApi } from "./api";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
+const props = defineProps<{ lang: Locale; strings: any }>();
 
-const lp = (path: string) => props.lang === "ar" ? path : `/en${path}`;
+const lp = (path: string) => localePath(path, props.lang);
 
 const nid = ref("");
 const fullNameAr = ref("");

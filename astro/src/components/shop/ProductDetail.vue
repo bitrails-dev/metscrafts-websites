@@ -5,10 +5,10 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { shopApi } from "./api";
 import { formatMoney } from "../../lib/store/money";
-import { localePath } from "../../i18n";
+import { localePath, type Locale } from "../../i18n";
 import ProductBuy from "./ProductBuy.vue";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any; slug: string }>();
+const props = defineProps<{ lang: Locale; strings: any; slug: string }>();
 const s = computed(() => props.strings.shop);
 
 const product = ref<any>(null);

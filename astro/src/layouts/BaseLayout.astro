@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
-import { DEFAULT_LOCALE, OG_LOCALE_TAGS, isRTL, type Locale } from "../i18n";
+import { DEFAULT_LOCALE, OG_LOCALE_TAGS, isRTL, pickLocalized, type Locale } from "../i18n";
 
 interface Props {
   lang?: Locale;
@@ -36,8 +36,8 @@ const ogImageUrl = ogImage.startsWith("http") ? ogImage : new URL(ogImage, siteU
 // stay literal for now — refine per-tenant later.
 const tenant = Astro.locals.tenant;
 const themeColor = tenant?.themeColor ?? "#15504f";
-const orgName = tenant ? (lang === "ar" ? tenant.nameAr : tenant.name)
-                       : (lang === "ar" ? "مستشفى دمياط العام" : "Dumyat Public Hospital");
+const orgName = tenant ? (pickLocalized(tenant.name, lang, tenant.defaultLanguage) || strings.site?.name)
+                       : strings.site?.name;
 const orgType = tenant?.type === "clinic" ? "MedicalClinic" : "Hospital";
 const orgPhone = tenant?.contact?.phone ?? "+20-57-222-4340";
 const orgLogo = tenant?.logo ?? `${siteUrl}/logo/logo-primary-on-IVORY.svg`;
@@ -96,7 +96,7 @@ const orgLogo = tenant?.logo ?? `${siteUrl}/logo/logo-primary-on-IVORY.svg`;
       "description": description,
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": lang === "ar" ? "دمياط" : "Dumyat",
+        "addressLocality": isRTL(lang) ? "دمياط" : "Dumyat",
         "addressCountry": "EG"
       },
       "telephone": orgPhone,
@@ -110,7 +110,7 @@ const orgLogo = tenant?.logo ?? `${siteUrl}/logo/logo-primary-on-IVORY.svg`;
       href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-lg focus:bg-navy-900 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ivory-50"
     >
-      {lang === "ar" ? "تخطَّ إلى المحتوى" : "Skip to content"}
+      {isRTL(lang) ? "تخطَّ إلى المحتوى" : "Skip to content"}
     </a>
 
     <slot />
@@ -118,7 +118,7 @@ const orgLogo = tenant?.logo ?? `${siteUrl}/logo/logo-primary-on-IVORY.svg`;
     <!-- Back to top -->
     <button
       id="back-to-top"
-      aria-label={lang === "ar" ? "العودة للأعلى" : "Back to top"}
+      aria-label={isRTL(lang) ? "العودة للأعلى" : "Back to top"}
       class="fixed bottom-6 end-6 z-40 hidden h-10 w-10 items-center justify-center rounded-full bg-navy-900 text-ivory-50 shadow-deep transition-all hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

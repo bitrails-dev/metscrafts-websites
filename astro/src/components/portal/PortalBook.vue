@@ -37,7 +37,7 @@
             <select v-model="clinicId" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm">
               <option value="">{{ strings.portal.placeholders.select }}</option>
               <option v-for="c in clinics" :key="c.clinic_id" :value="c.clinic_id">
-                {{ lang === 'ar' ? c.name_ar : c.name_en }}
+                {{ portalName(c, lang, defaultLanguage) }}
               </option>
             </select>
           </label>
@@ -47,7 +47,7 @@
             <select v-model="providerId" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm" :disabled="!clinicId">
               <option value="">{{ strings.portal.placeholders.select }}</option>
               <option v-for="p in providers" :key="p.provider_id" :value="p.provider_id">
-                {{ lang === 'ar' ? p.name_ar : p.name_en }}
+                {{ portalName(p, lang, defaultLanguage) }}
               </option>
             </select>
           </label>
@@ -57,7 +57,7 @@
             <select v-model="visitTypeId" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm">
               <option value="">{{ strings.portal.placeholders.select }}</option>
               <option v-for="v in visitTypes" :key="v.visit_type_id" :value="v.visit_type_id">
-                {{ lang === 'ar' ? v.name_ar : v.name_en }}
+                {{ portalName(v, lang, defaultLanguage) }}
               </option>
             </select>
           </label>
@@ -117,10 +117,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { portalApi } from "./api";
+import { portalApi, portalName } from "./api";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
-const lp = (path: string) => props.lang === "ar" ? path : `/en${path}`;
+const props = defineProps<{ lang: Locale; strings: any; defaultLanguage: Locale }>();
+const lp = (path: string) => localePath(path, props.lang);
 
 type State = "loading" | "ready";
 const state = ref<State>("loading");

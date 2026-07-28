@@ -57,10 +57,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { portalApi } from "./api";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
+const props = defineProps<{ lang: Locale; strings: any }>();
 
-const lp = (path: string) => props.lang === "ar" ? path : `/en${path}`;
+const lp = (path: string) => localePath(path, props.lang);
 
 type State = "loading" | "signed_out" | "signed_in";
 const state = ref<State>("loading");

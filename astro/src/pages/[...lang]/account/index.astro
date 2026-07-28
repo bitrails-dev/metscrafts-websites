@@ -1,10 +1,12 @@
 ---
 import ShopLayout from "../../../layouts/ShopLayout.astro";
-import { getStrings } from "../../../i18n";
+import { getStrings, toLang } from "../../../i18n";
 import AccountView from "../../../components/shop/AccountView.vue";
 
 // Account (Wave E3). Sign-in / register / logout / me + live order history via shopApi.auth + shopApi.orders.
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 ---
 <ShopLayout lang={lang} strings={strings} title={`${strings.shop.account.title} | ${strings.site.name}`} description={strings.shop.account.title}>

@@ -5,6 +5,7 @@
 // codes, the chosen shipping method, an idempotency key, and the return URL. It NEVER sends line
 // items, totals, or prices — the server re-prices from the cart. See plan §3.2 / §3.7 / §4.1.
 import type { CheckoutInput, PaymentMethod, AddressInput } from "./api";
+import { localePath, type Locale } from "../../i18n";
 
 export interface CheckoutFormState {
   cartId: string;
@@ -68,8 +69,7 @@ export function buildCheckoutInput(form: CheckoutFormState): CheckoutInput {
 }
 
 /** The browser return URL the payment provider redirects back to after a hosted checkout. */
-export function checkoutReturnUrl(lang: "ar" | "en"): string {
+export function checkoutReturnUrl(lang: Locale): string {
   const base = typeof window !== "undefined" ? window.location.origin : "";
-  const prefix = lang === "en" ? "/en" : "";
-  return `${base}${prefix}/checkout/confirmation`;
+  return `${base}${localePath("/checkout/confirmation", lang)}`;
 }

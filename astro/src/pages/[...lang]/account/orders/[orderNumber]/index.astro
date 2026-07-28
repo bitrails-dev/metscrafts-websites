@@ -1,10 +1,12 @@
 ---
 import ShopLayout from "../../../../../layouts/ShopLayout.astro";
-import { getStrings } from "../../../../../i18n";
+import { getStrings, toLang } from "../../../../../i18n";
 import OrderDetail from "../../../../../components/shop/OrderDetail.vue";
 
 // Order detail (Wave E3). Fetches a single order by number via shopApi.order.
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 const orderNumber = (Astro.params.orderNumber ?? "") as string;
 ---

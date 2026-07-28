@@ -1,19 +1,21 @@
 ---
 import YouTubeEmbed from './YouTubeEmbed.astro';
 import type { ArticleBlock } from '../../lib/blocks';
+import { pickLocalized, type Locale } from '../../i18n';
 
 interface Props {
   blocks: ArticleBlock[];
-  lang: 'ar' | 'en';
+  lang: Locale;
+  defaultLanguage: Locale;
 }
-const { blocks, lang } = Astro.props;
-const ar = lang === 'ar';
+const { blocks, lang, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
 ---
 <div class="space-y-8">
   {blocks.map((block) => {
     switch (block.type) {
       case 'richText': {
-        const html = (ar ? block.htmlAr : block.html) || block.html;
+        const html = pickLocalized(block.html, lang, fallback);
         return html && (
           <div class="bg-ivory-50 p-8 border border-ink-100">
             <div class="prose max-w-none" set:html={html} />
@@ -21,15 +23,15 @@ const ar = lang === 'ar';
         );
       }
       case 'heading': {
-        const text = (ar ? block.textAr : block.text) || block.text;
+        const text = pickLocalized(block.text, lang, fallback);
         const Tag = block.level === 'h3' ? 'h3' : 'h2';
         return text && (
           <Tag class={`font-display-ar font-bold text-navy-900 ${block.level === 'h3' ? 'text-xl' : 'text-2xl'}`}>{text}</Tag>
         );
       }
       case 'image': {
-        const alt = (ar ? block.altAr : block.alt) || block.alt;
-        const caption = ar ? block.captionAr : block.caption;
+        const alt = pickLocalized(block.alt, lang, fallback);
+        const caption = pickLocalized(block.caption, lang, fallback);
         return block.url && (
           <figure class="space-y-2">
             <div class="overflow-hidden border border-ink-100">
@@ -40,7 +42,7 @@ const ar = lang === 'ar';
         );
       }
       case 'youtube': {
-        const caption = ar ? block.captionAr : block.caption;
+        const caption = pickLocalized(block.caption, lang, fallback);
         return (
           <figure class="space-y-2">
             <div class="overflow-hidden border border-ink-100">
@@ -51,8 +53,8 @@ const ar = lang === 'ar';
         );
       }
       case 'testimonial': {
-        const text = (ar ? block.textAr : block.text) || block.text;
-        const caption = ar ? block.captionAr : block.caption;
+        const text = pickLocalized(block.text, lang, fallback);
+        const caption = pickLocalized(block.caption, lang, fallback);
         return text && (
           <blockquote class="bg-teal-800 p-8 text-ivory-50 shadow-deep">
             <div class="flex items-start gap-4">

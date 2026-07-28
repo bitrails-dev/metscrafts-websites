@@ -8,9 +8,9 @@ import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { shopApi, type AddressInput, type PaymentMethod } from "./api";
 import { buildCheckoutInput, checkoutReturnUrl, normalizePromotionCodes } from "./checkout-input";
 import { formatMoney } from "../../lib/store/money";
-import { localePath } from "../../i18n";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
+const props = defineProps<{ lang: Locale; strings: any }>();
 const s = computed(() => props.strings.shop);
 
 // NH16: gateway-hosted checkout allowlist. Only these hosts may receive a window.location redirect

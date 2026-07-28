@@ -3,7 +3,7 @@ import { pickLocalized, type Locale } from '../../i18n';
 import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
 interface Props {
-	lang: 'ar' | 'en';
+	lang: Locale;
 	strings: any;
 	stats?: HealthcareSettings['stats'];
 	// Tenant default locale — the A7-safe pickLocalized fallback when `lang` has no value.

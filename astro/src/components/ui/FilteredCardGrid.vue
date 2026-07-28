@@ -9,7 +9,7 @@
         :class="selectedCategory === cat.value ? 'btn-primary' : 'btn-ghost'"
         @click="selectedCategory = cat.value; currentPage = 1"
       >
-        {{ lang === 'ar' ? cat.labelAr : cat.labelEn }}
+        {{ pickLocalized(cat.label, lang, defaultLanguage) }}
       </button>
     </div>
 
@@ -49,7 +49,7 @@
             <p v-if="getSummary(item)" class="mt-2 text-sm text-ink-500 line-clamp-2">{{ getSummary(item) }}</p>
             <div class="mt-auto pt-4">
               <a :href="`${basePath}/${item.slug}`" class="btn-text text-sm">
-                {{ lang === 'ar' ? 'اقرأ المزيد ←' : 'Read More →' }}
+                {{ isRTL(lang) ? 'اقرأ المزيد ←' : 'Read More →' }}
               </a>
             </div>
           </div>
@@ -80,7 +80,7 @@
             <p v-if="getSummary(item)" class="mt-2 text-sm text-ink-500 line-clamp-2">{{ getSummary(item) }}</p>
             <div class="mt-auto pt-4">
               <a :href="`${basePath}/${item.slug}`" class="btn-text text-sm">
-                {{ lang === 'ar' ? 'اقرأ المزيد ←' : 'Read More →' }}
+                {{ isRTL(lang) ? 'اقرأ المزيد ←' : 'Read More →' }}
               </a>
             </div>
           </div>
@@ -90,13 +90,13 @@
 
     <!-- Empty state -->
     <div v-else class="text-center py-12">
-      <p class="text-ink-500">{{ lang === 'ar' ? 'لا توجد عناصر' : 'No items found' }}</p>
+      <p class="text-ink-500">{{ isRTL(lang) ? 'لا توجد عناصر' : 'No items found' }}</p>
     </div>
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-10 flex items-center justify-center gap-2">
       <button v-if="currentPage > 1" class="btn btn-ghost text-sm" @click="currentPage--">
-        {{ lang === 'ar' ? 'السابق' : 'Prev' }}
+        {{ isRTL(lang) ? 'السابق' : 'Prev' }}
       </button>
       <div class="flex gap-1">
         <button
@@ -110,7 +110,7 @@
         </button>
       </div>
       <button v-if="currentPage < totalPages" class="btn btn-ghost text-sm" @click="currentPage++">
-        {{ lang === 'ar' ? 'التالي' : 'Next' }}
+        {{ isRTL(lang) ? 'التالي' : 'Next' }}
       </button>
     </div>
   </div>
@@ -118,29 +118,28 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { isRTL, pickLocalized, DATE_LOCALE_TAGS, type Locale } from '../../i18n';
 
 interface Item {
   id: string;
   slug: string;
-  title: string;
-  titleAr: string;
+  title: Record<string, string>;
   category?: string;
   thumbnail?: string;
   date?: string;
-  summary?: string;
-  summaryAr?: string;
+  summary?: Record<string, string>;
 }
 
 interface Category {
   value: string;
-  labelAr: string;
-  labelEn: string;
+  label: Record<string, string>;
 }
 
 interface Props {
   items: Item[];
   categories: Category[];
-  lang: 'ar' | 'en';
+  lang: Locale;
+  defaultLanguage: Locale;
   basePath: string;
   itemsPerPage?: number;
   cardType: 'article' | 'event';
@@ -154,7 +153,7 @@ const currentPage = ref(1);
 const selectedCategory = ref('all');
 
 const filterOptions = computed(() => [
-  { value: 'all', labelEn: 'All', labelAr: 'الكل' },
+  { value: 'all', label: { ar: 'الكل', en: 'All', es: 'All' } },
   ...props.categories,
 ]);
 
@@ -181,11 +180,11 @@ const paginationRange = computed(() => {
   return range;
 });
 
-const getTitle = (item: Item) => (props.lang === 'ar' ? item.titleAr : item.title);
-const getSummary = (item: Item) => (props.lang === 'ar' ? item.summaryAr : item.summary);
+const getTitle = (item: Item) => pickLocalized(item.title, props.lang, props.defaultLanguage);
+const getSummary = (item: Item) => pickLocalized(item.summary, props.lang, props.defaultLanguage);
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString(props.lang === 'ar' ? 'ar-EG' : 'en-US', {
+  new Date(dateStr).toLocaleDateString(DATE_LOCALE_TAGS[props.lang], {
     year: 'numeric', month: 'short', day: 'numeric',
   });
 
@@ -200,7 +199,7 @@ const getCategoryClass = (category?: string) => {
 
 const getCategoryLabel = (category?: string) => {
   const cat = props.categories.find((c) => c.value === category);
-  return cat ? (props.lang === 'ar' ? cat.labelAr : cat.labelEn) : '';
+  return cat ? pickLocalized(cat.label, props.lang, props.defaultLanguage) : '';
 };
 </script>
 

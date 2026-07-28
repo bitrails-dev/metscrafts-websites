@@ -1,11 +1,16 @@
 ---
 import { getCollection } from '../../lib/cms';
-import { localePath } from '../../i18n';
+import { isRTL, localePath, pickLocalized, type Locale } from '../../i18n';
 import CardBase from '../ui/CardBase.astro';
 import CardGrid from '../ui/CardGrid.astro';
 
-const { lang, strings } = Astro.props;
-const isAr = lang === 'ar';
+interface Props {
+	lang: Locale;
+	strings: any;
+	defaultLanguage: Locale;
+}
+const { lang, strings, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
 const departments = await getCollection('departments', Astro.locals.tenant?.id);
 
 const iconPaths: Record<string, string> = {
@@ -43,7 +48,7 @@ const defaultIcon =
 			<div>
 				<div class='inline-flex items-center gap-2.5 mb-4'>
 					<div class='w-8 h-px bg-teal-600'></div>
-					<p class='h-eyebrow'>{isAr ? 'تخصصاتنا' : 'Our Specialties'}</p>
+					<p class='h-eyebrow'>{isRTL(lang) ? 'تخصصاتنا' : 'Our Specialties'}</p>
 				</div>
 				<h2
 					class='font-display-ar font-medium text-navy-900 leading-none tracking-tight'
@@ -62,10 +67,8 @@ const defaultIcon =
 		<CardGrid cols={3} gap='none'>
 			{
 				departments.map(dept => {
-					const name = isAr ? dept.data.nameAr : dept.data.name;
-					const description = isAr
-						? dept.data.descriptionAr
-						: dept.data.description;
+					const name = pickLocalized(dept.data.name, lang, fallback);
+					const description = pickLocalized(dept.data.description, lang, fallback);
 					const href = localePath(`/departments/${dept.id}`, lang);
 					const iconPath = iconPaths[dept.data.icon as string] ?? defaultIcon;
 					const imageBadge = dept.data.centerOfExcellence

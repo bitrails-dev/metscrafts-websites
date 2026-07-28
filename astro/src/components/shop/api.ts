@@ -14,6 +14,8 @@
 // delete this file, updating the single import path in each shop component — no behavioural change,
 // because the browser side never signs.
 
+import type { Locale } from "../../i18n";
+
 export type PaymentMethod = "cod" | "bank" | "paymob" | "kashier";
 
 export interface CatalogParams {
@@ -21,7 +23,7 @@ export interface CatalogParams {
   category?: string;
   page?: number;
   limit?: number;
-  locale?: "ar" | "en";
+  locale?: Locale;
 }
 
 export interface CatalogResult {
@@ -107,7 +109,7 @@ export interface CustomerResult {
  */
 export interface ShopApi {
   catalog(params?: CatalogParams): Promise<CatalogResult>;
-  product(slug: string, locale?: "ar" | "en"): Promise<any>;
+  product(slug: string, locale?: Locale): Promise<any>;
   cart(): Promise<Cart>;
   addItem(sku: string, quantity: number): Promise<Cart>;
   /** quantity 0 removes the line. */

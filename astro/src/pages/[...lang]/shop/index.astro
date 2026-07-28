@@ -1,12 +1,14 @@
 ---
 import ShopLayout from "../../../layouts/ShopLayout.astro";
-import { getStrings } from "../../../i18n";
+import { getStrings, toLang } from "../../../i18n";
 import ShopCatalog from "../../../components/shop/ShopCatalog.vue";
 
 // Catalog list (Wave E3). The grid is a client-hydrated island that reads the signed store catalog
 // via shopApi (same-origin /api/store/v2/catalog → Astro gateway proxy → CMS plugin store). The
 // Astro proxy resolves the tenant + signs; this page stays seam-free and never imports store/server.
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 ---
 <ShopLayout lang={lang} strings={strings} title={`${strings.shop.title} | ${strings.site.name}`} description={strings.shop.description}>

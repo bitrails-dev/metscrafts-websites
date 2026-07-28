@@ -1,6 +1,11 @@
 ---
+import { isRTL, type Locale } from '../../i18n';
+
+interface Props {
+	lang: Locale;
+	strings: any;
+}
 const { lang, strings } = Astro.props;
-const isAr = lang === 'ar';
 ---
 
 <!-- About Spread section (replaces old MissionStrip) -->
@@ -22,7 +27,7 @@ const isAr = lang === 'ar';
 				<!-- Eyebrow -->
 				<div class="inline-flex items-center gap-2.5 mb-4">
 					<div class="w-8 h-px bg-teal-600"></div>
-					<p class="h-eyebrow">{isAr ? 'عن المستشفى' : 'About Us'}</p>
+					<p class="h-eyebrow">{isRTL(lang) ? 'عن المستشفى' : 'About Us'}</p>
 				</div>
 
 				<h2 class="font-display-ar font-medium text-navy-900 leading-none tracking-tight mb-8" style="font-size: clamp(36px, 4vw, 56px); line-height: 1.1;">

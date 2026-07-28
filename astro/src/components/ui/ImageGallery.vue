@@ -59,7 +59,7 @@
         <!-- Navigation buttons -->
         <button
           class="absolute start-4 top-1/2 -translate-y-1/2 rounded-lg bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-          :aria-label="lang === 'ar' ? 'الصورة التالية' : 'Previous image'"
+          :aria-label="isRTL(lang) ? 'الصورة التالية' : 'Previous image'"
           @click="previousImage"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -69,7 +69,7 @@
 
         <button
           class="absolute end-4 top-1/2 -translate-y-1/2 rounded-lg bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-          :aria-label="lang === 'ar' ? 'الصورة السابقة' : 'Next image'"
+          :aria-label="isRTL(lang) ? 'الصورة السابقة' : 'Next image'"
           @click="nextImage"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -88,17 +88,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { isRTL, pickLocalized, type Locale } from '../../i18n';
 
 interface Image {
   url: string;
-  caption?: string;
-  captionAr?: string;
+  caption?: Record<string, string>;
   alt: string;
 }
 
 interface Props {
   images: Image[];
-  lang: 'ar' | 'en';
+  lang: Locale;
+  defaultLanguage: Locale;
 }
 
 const props = defineProps<Props>();
@@ -108,12 +109,9 @@ const currentIndex = ref(0);
 const closeBtn = ref<HTMLButtonElement | null>(null);
 
 const currentImage = computed(() => props.images[currentIndex.value]);
-const currentCaption = computed(() => {
-  if (props.lang === 'ar') {
-    return currentImage.value?.captionAr ?? currentImage.value?.caption;
-  }
-  return currentImage.value?.caption;
-});
+const currentCaption = computed(() =>
+  pickLocalized(currentImage.value?.caption, props.lang, props.defaultLanguage),
+);
 
 const openLightbox = (index: number) => {
   currentIndex.value = index;

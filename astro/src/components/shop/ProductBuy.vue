@@ -4,8 +4,9 @@
 // cart by SKU and re-prices. No client-side read-merge-write, no client totals.
 import { ref, computed } from "vue";
 import { shopApi } from "./api";
+import type { Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any; product: any }>();
+const props = defineProps<{ lang: Locale; strings: any; product: any }>();
 const s = computed(() => props.strings.shop);
 
 const variants = computed(() => (Array.isArray(props.product.variants) ? props.product.variants : []));

@@ -4,20 +4,22 @@ import SidebarLayout from '../../../layouts/SidebarLayout.astro';
 import ArRedirect from '../../../components/ui/ArRedirect.astro';
 import ArticleBlocks from '../../../components/ui/ArticleBlocks.astro';
 import { getCollection } from '../../../lib/cms';
-import { getStrings, localePath } from '../../../i18n';
+import { getStrings, localePath, toLang, isRTL, pickLocalized, DATE_LOCALE_TAGS, DEFAULT_LOCALE, FALLBACK_LANGUAGES } from '../../../i18n';
 
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 
 const all = await getCollection('articles', Astro.locals.tenant?.id);
 const article = all.find((a) => a.id === Astro.params.slug);
 if (!article) return Astro.redirect('/404');
-const isArRedirect = Astro.params.lang === 'ar';
+const isArRedirect = Astro.url.pathname.split('/')[1] === DEFAULT_LOCALE;
 const strings = getStrings(lang);
 
-const title = lang === 'ar' ? article.data.titleAr : article.data.title;
+const title = pickLocalized(article.data.title, lang, fallback);
 
 const formatDate = (dateStr: string | Date) =>
-  new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
+  new Date(dateStr).toLocaleDateString(DATE_LOCALE_TAGS[lang], {
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
@@ -30,13 +32,13 @@ const tokenColors: Record<string, string> = {
   coral: 'bg-coral/15 text-coral',
   sage: 'bg-sage/15 text-sage',
 };
-const categoryLabel = (lang === 'ar' ? article.data.categoryNameAr : article.data.categoryName) || '';
+const categoryLabel = pickLocalized(article.data.categoryName, lang, fallback);
 const categoryColorClass = (article.data.categoryColor && tokenColors[article.data.categoryColor])
   || 'bg-ink-500/10 text-ink-500';
 
 const breadcrumbs = [
   { label: strings.breadcrumb.home, href: localePath('/', lang) },
-  { label: lang === 'ar' ? 'المقالات' : 'Articles', href: localePath('/articles', lang) },
+  { label: isRTL(lang) ? 'المقالات' : 'Articles', href: localePath('/articles', lang) },
   { label: title },
 ];
 ---
@@ -57,7 +59,7 @@ const breadcrumbs = [
     <section class="mx-auto max-w-[1440px] px-6 pt-12 pb-2" data-animate="fade">
       <div class="inline-flex items-center gap-2.5 mb-5">
         <div class="w-8 h-px bg-teal-600"></div>
-        <p class="h-eyebrow">{lang === 'ar' ? 'المقالات' : 'Articles'}</p>
+        <p class="h-eyebrow">{isRTL(lang) ? 'المقالات' : 'Articles'}</p>
       </div>
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <span class={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${categoryColorClass}`}>
@@ -86,14 +88,14 @@ const breadcrumbs = [
           )}
 
           {article.data.content && article.data.content.length > 0 && (
-            <ArticleBlocks blocks={article.data.content} lang={lang} />
+            <ArticleBlocks blocks={article.data.content} lang={lang} defaultLanguage={fallback ?? FALLBACK_LANGUAGES[0]} />
           )}
 
           <div>
             <a href={localePath('/articles', lang)} class="btn-text text-sm">
               <span class="inline-flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-                {lang === 'ar' ? 'العودة إلى المقالات' : 'Back to Articles'}
+                {isRTL(lang) ? 'العودة إلى المقالات' : 'Back to Articles'}
               </span>
             </a>
           </div>
@@ -103,33 +105,33 @@ const breadcrumbs = [
         <div class="space-y-6">
           <div class="bg-teal-800 p-8 text-ivory-50 shadow-deep">
             <h3 class="text-lg font-bold font-display-ar mb-4">
-              {lang === 'ar' ? 'معلومات المقالة' : 'Article Info'}
+              {isRTL(lang) ? 'معلومات المقالة' : 'Article Info'}
             </h3>
             <div class="space-y-4">
               <div>
-                <p class="text-xs text-ivory-100/60">{lang === 'ar' ? 'التاريخ' : 'Published'}</p>
+                <p class="text-xs text-ivory-100/60">{isRTL(lang) ? 'التاريخ' : 'Published'}</p>
                 <p class="mt-1 font-semibold">{formatDate(article.data.date)}</p>
               </div>
               {article.data.author && (
                 <div>
-                  <p class="text-xs text-ivory-100/60">{lang === 'ar' ? 'الكاتب' : 'Author'}</p>
+                  <p class="text-xs text-ivory-100/60">{isRTL(lang) ? 'الكاتب' : 'Author'}</p>
                   <p class="mt-1 font-semibold">{article.data.author}</p>
                 </div>
               )}
               <div>
-                <p class="text-xs text-ivory-100/60">{lang === 'ar' ? 'النوع' : 'Category'}</p>
+                <p class="text-xs text-ivory-100/60">{isRTL(lang) ? 'النوع' : 'Category'}</p>
                 <p class="mt-1 font-semibold">{categoryLabel}</p>
               </div>
             </div>
             <a href={localePath('/contact', lang)} class="btn btn-teal mt-6 w-full justify-center">
-              {lang === 'ar' ? 'اتصل بنا' : 'Contact Us'}
+              {isRTL(lang) ? 'اتصل بنا' : 'Contact Us'}
             </a>
           </div>
 
           <div class="bg-ivory-50 p-6 border border-ink-100 text-sm text-ink-500">
-            <p class="font-semibold text-ink-900 mb-2">{lang === 'ar' ? 'خط الطوارئ' : 'Emergency Line'}</p>
+            <p class="font-semibold text-ink-900 mb-2">{isRTL(lang) ? 'خط الطوارئ' : 'Emergency Line'}</p>
             <a href="tel:12345" class="text-2xl font-extrabold text-coral hover:underline">12345</a>
-            <p class="mt-1 text-xs text-ink-400">{lang === 'ar' ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
+            <p class="mt-1 text-xs text-ink-400">{isRTL(lang) ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
           </div>
         </div>
       </div>

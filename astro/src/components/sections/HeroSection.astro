@@ -1,16 +1,15 @@
 ---
-import { localePath, pickLocalized, type Locale } from '../../i18n';
+import { isRTL, localePath, pickLocalized, type Locale } from '../../i18n';
 import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
 interface Props {
-	lang: 'ar' | 'en';
+	lang: Locale;
 	strings: any;
 	stats?: HealthcareSettings['stats'];
 	// Tenant default locale — the A7-safe pickLocalized fallback when `lang` has no value.
 	defaultLanguage: Locale;
 }
 const { lang, strings, stats, defaultLanguage } = Astro.props;
-const isAr = lang === 'ar';
 const fallback = defaultLanguage;
 
 // Hero stats come from the tenant's healthcare-settings doc (passed in by the page). When no
@@ -108,7 +107,7 @@ const items = stats ? [
 							<span
 								class='w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse-dot'
 							></span>
-							{isAr ? 'مفتوح الآن — استقبال الطوارئ' : 'Open now — ER intake'}
+							{isRTL(lang) ? 'مفتوح الآن — استقبال الطوارئ' : 'Open now — ER intake'}
 						</div>
 					</div>
 					<!-- Label -->

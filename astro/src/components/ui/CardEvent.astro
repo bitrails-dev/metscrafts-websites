@@ -1,11 +1,19 @@
 ---
 import CardBase from './CardBase.astro';
 
-import { localePath } from '../../i18n';
+import { localePath, pickLocalized, DATE_LOCALE_TAGS, type Locale } from '../../i18n';
 
-const { item, lang, categoryLabel, readLabel } = Astro.props;
-const title = lang === 'ar' ? item.data.titleAr : item.data.title;
-const summary = lang === 'ar' ? (item.data.summaryAr ?? '') : (item.data.summary ?? '');
+interface Props {
+  item: any;
+  lang: Locale;
+  categoryLabel?: string;
+  readLabel?: string;
+  defaultLanguage: Locale;
+}
+const { item, lang, categoryLabel, readLabel, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
+const title = pickLocalized(item.data.title, lang, fallback);
+const summary = pickLocalized(item.data.summary, lang, fallback);
 const href = localePath(`/events/${item.id}`, lang);
 const hasThumbnail = item.data.thumbnail && !item.data.thumbnail.includes('picsum');
 
@@ -16,7 +24,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const dateStr = item.data.date
-  ? new Date(item.data.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
+  ? new Date(item.data.date).toLocaleDateString(DATE_LOCALE_TAGS[lang], {
       year: 'numeric', month: 'short', day: 'numeric',
     })
   : '';

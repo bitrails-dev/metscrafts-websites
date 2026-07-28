@@ -5,19 +5,21 @@ import ArRedirect from '../../../components/ui/ArRedirect.astro';
 import YouTubeEmbed from '../../../components/ui/YouTubeEmbed.astro';
 import ImageGallery from '../../../components/ui/ImageGallery.vue';
 import { getCollection } from '../../../lib/cms';
-import { getStrings, localePath } from '../../../i18n';
+import { getStrings, localePath, toLang, isRTL, pickLocalized, DATE_LOCALE_TAGS, DEFAULT_LOCALE, FALLBACK_LANGUAGES, type Locale } from '../../../i18n';
 
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
-const isArRedirect = Astro.params.lang === 'ar';
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
+const isArRedirect = Astro.url.pathname.split('/')[1] === DEFAULT_LOCALE;
 
 const all = await getCollection('events', Astro.locals.tenant?.id);
 const event = all.find((e) => e.id === Astro.params.slug);
 if (!event) return Astro.redirect('/404');
 const strings = getStrings(lang);
 
-const title = lang === 'ar' ? event.data.titleAr : event.data.title;
-const summary = lang === 'ar' ? event.data.summaryAr : event.data.summary;
-const body = lang === 'ar' ? event.data.bodyAr : event.data.body;
+const title = pickLocalized(event.data.title, lang, fallback);
+const summary = pickLocalized(event.data.summary, lang, fallback);
+const body = pickLocalized(event.data.body, lang, fallback);
 
 const categoryColors: Record<string, string> = {
   procedure: 'bg-teal-700/10 text-teal-700',
@@ -25,29 +27,28 @@ const categoryColors: Record<string, string> = {
   announcement: 'bg-gold/15 text-gold',
 };
 
-const categoryLabels: Record<string, { en: string; ar: string }> = {
-  procedure: { en: 'Procedure', ar: 'إجراء' },
-  event: { en: 'Event', ar: 'حدث' },
-  announcement: { en: 'Announcement', ar: 'إعلان' },
+const categoryLabels: Record<string, Partial<Record<Locale, string>>> = {
+  procedure: { ar: 'إجراء', en: 'Procedure' },
+  event: { ar: 'حدث', en: 'Event' },
+  announcement: { ar: 'إعلان', en: 'Announcement' },
 };
 
 const formatDate = (dateStr: string | Date) =>
-  new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
+  new Date(dateStr).toLocaleDateString(DATE_LOCALE_TAGS[lang], {
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
-const categoryLabel = categoryLabels[event.data.category]?.[lang === 'ar' ? 'ar' : 'en'] || '';
+const categoryLabel = categoryLabels[event.data.category]?.[lang] ?? '';
 
 const breadcrumbs = [
   { label: strings.breadcrumb.home, href: localePath('/', lang) },
-  { label: lang === 'ar' ? 'الفعاليات' : 'Events', href: localePath('/events', lang) },
+  { label: isRTL(lang) ? 'الفعاليات' : 'Events', href: localePath('/events', lang) },
   { label: title },
 ];
 
 const galleryImages = event.data.gallery?.map((img) => ({
   url: img.url,
-  caption: lang === 'ar' ? img.captionAr || img.caption : img.caption,
-  captionAr: img.captionAr,
+  caption: img.caption,
   alt: img.alt,
 })) || [];
 ---
@@ -68,7 +69,7 @@ const galleryImages = event.data.gallery?.map((img) => ({
     <section class="mx-auto max-w-[1440px] px-6 pt-12 pb-2" data-animate="fade">
       <div class="inline-flex items-center gap-2.5 mb-5">
         <div class="w-8 h-px bg-teal-600"></div>
-        <p class="h-eyebrow">{lang === 'ar' ? 'الفعاليات' : 'Events'}</p>
+        <p class="h-eyebrow">{isRTL(lang) ? 'الفعاليات' : 'Events'}</p>
       </div>
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <span class={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${categoryColors[event.data.category] || 'bg-ink-500/10 text-ink-500'}`}>
@@ -108,9 +109,9 @@ const galleryImages = event.data.gallery?.map((img) => ({
           {galleryImages.length > 0 && (
             <div class="space-y-4">
               <h2 class="text-lg font-bold text-ink-900 font-display-ar">
-                {lang === 'ar' ? 'معرض الصور' : 'Photo Gallery'}
+                {isRTL(lang) ? 'معرض الصور' : 'Photo Gallery'}
               </h2>
-              <ImageGallery images={galleryImages} lang={lang} client:visible />
+              <ImageGallery images={galleryImages} lang={lang} defaultLanguage={fallback ?? FALLBACK_LANGUAGES[0]} client:visible />
             </div>
           )}
 
@@ -118,7 +119,7 @@ const galleryImages = event.data.gallery?.map((img) => ({
             <a href={localePath('/events', lang)} class="btn-text text-sm">
               <span class="inline-flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-                {lang === 'ar' ? 'العودة إلى الفعاليات' : 'Back to Events'}
+                {isRTL(lang) ? 'العودة إلى الفعاليات' : 'Back to Events'}
               </span>
             </a>
           </div>
@@ -128,27 +129,27 @@ const galleryImages = event.data.gallery?.map((img) => ({
         <div class="space-y-6">
           <div class="bg-teal-800 p-8 text-ivory-50 shadow-deep">
             <h3 class="text-lg font-bold font-display-ar mb-4">
-              {lang === 'ar' ? 'معلومات الفعالية' : 'Event Details'}
+              {isRTL(lang) ? 'معلومات الفعالية' : 'Event Details'}
             </h3>
             <div class="space-y-4">
               <div>
-                <p class="text-xs text-ivory-100/60">{lang === 'ar' ? 'التاريخ' : 'Date'}</p>
+                <p class="text-xs text-ivory-100/60">{isRTL(lang) ? 'التاريخ' : 'Date'}</p>
                 <p class="mt-1 font-semibold">{formatDate(event.data.date)}</p>
               </div>
               <div>
-                <p class="text-xs text-ivory-100/60">{lang === 'ar' ? 'النوع' : 'Category'}</p>
+                <p class="text-xs text-ivory-100/60">{isRTL(lang) ? 'النوع' : 'Category'}</p>
                 <p class="mt-1 font-semibold">{categoryLabel}</p>
               </div>
             </div>
             <a href={localePath('/contact', lang)} class="btn btn-teal mt-6 w-full justify-center">
-              {lang === 'ar' ? 'تسجيل الاهتمام' : 'Register Interest'}
+              {isRTL(lang) ? 'تسجيل الاهتمام' : 'Register Interest'}
             </a>
           </div>
 
           <div class="bg-ivory-50 p-6 border border-ink-100 text-sm text-ink-500">
-            <p class="font-semibold text-ink-900 mb-2">{lang === 'ar' ? 'خط الطوارئ' : 'Emergency Line'}</p>
+            <p class="font-semibold text-ink-900 mb-2">{isRTL(lang) ? 'خط الطوارئ' : 'Emergency Line'}</p>
             <a href="tel:12345" class="text-2xl font-extrabold text-coral hover:underline">12345</a>
-            <p class="mt-1 text-xs text-ink-400">{lang === 'ar' ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
+            <p class="mt-1 text-xs text-ink-400">{isRTL(lang) ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
           </div>
         </div>
       </div>

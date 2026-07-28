@@ -175,7 +175,7 @@ export function hasFeature(tenant: Tenant | undefined, feature: TenantFeature): 
 export function applyTenant(
   strings: any,
   tenant: Tenant | undefined,
-  lang: "ar" | "en",
+  lang: Locale,
   healthcareSettings?: HealthcareSettings,
 ): any {
   if (!tenant) return strings;

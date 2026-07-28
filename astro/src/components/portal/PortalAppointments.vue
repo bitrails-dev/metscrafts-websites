@@ -23,7 +23,7 @@
             <p class="text-sm font-bold text-ink-900">{{ a.reference_number }}</p>
             <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-ink-900">{{ a.status }}</span>
           </div>
-          <p class="mt-2 text-sm text-ink-900">{{ a.clinic?.name_ar || a.clinic?.name_en }}</p>
+          <p class="mt-2 text-sm text-ink-900">{{ portalName(a.clinic, lang, defaultLanguage) }}</p>
           <p class="mt-1 text-xs text-ink-500">{{ a.start_at }}</p>
 
           <div class="mt-4 flex flex-wrap gap-2">
@@ -113,11 +113,12 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { portalApi } from "./api";
+import { portalApi, portalName } from "./api";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any }>();
+const props = defineProps<{ lang: Locale; strings: any; defaultLanguage: Locale }>();
 
-const lp = (path: string) => props.lang === "ar" ? path : `/en${path}`;
+const lp = (path: string) => localePath(path, props.lang);
 
 type State = "loading" | "ready";
 const state = ref<State>("loading");
@@ -232,7 +233,7 @@ function labelFor(items: any[], id: string) {
   if (!id) return props.strings.portal.admin.anyDoctor;
   const item = items.find((entry) => entry.provider_id === id || entry.visit_type_id === id || entry.clinic_id === id);
   if (!item) return id;
-  return props.lang === "ar" ? item.name_ar || item.name_en : item.name_en || item.name_ar;
+  return portalName(item, props.lang, props.defaultLanguage);
 }
 
 function today() {

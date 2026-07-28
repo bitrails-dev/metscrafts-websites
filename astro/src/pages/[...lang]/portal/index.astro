@@ -1,9 +1,11 @@
 ---
 import PortalLayout from "../../../layouts/PortalLayout.astro";
 import PortalHome from "../../../components/portal/PortalHome.vue";
-import { getStrings } from "../../../i18n";
+import { getStrings, toLang } from "../../../i18n";
 
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 ---
 <PortalLayout

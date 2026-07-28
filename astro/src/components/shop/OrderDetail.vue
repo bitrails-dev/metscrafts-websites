@@ -5,9 +5,9 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { shopApi } from "./api";
 import { orderStatusKey, orderGrandTotal } from "./order-status";
 import { formatMoney } from "../../lib/store/money";
-import { localePath } from "../../i18n";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any; orderNumber: string }>();
+const props = defineProps<{ lang: Locale; strings: any; orderNumber: string }>();
 const s = computed(() => props.strings.shop.orders);
 const sk = computed(() => props.strings.shop);
 

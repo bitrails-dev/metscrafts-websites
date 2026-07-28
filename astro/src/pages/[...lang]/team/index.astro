@@ -6,10 +6,11 @@ import CardBase from '../../../components/ui/CardBase.astro';
 import CardDoctor from '../../../components/ui/CardDoctor.astro';
 import CardGrid from '../../../components/ui/CardGrid.astro';
 import { getCollection } from '../../../lib/cms';
-import { getStrings, localePath } from '../../../i18n';
-import type { Locale } from '../../../i18n';
+import { getStrings, localePath, toLang, pickLocalized, FALLBACK_LANGUAGES } from '../../../i18n';
 
-const lang = (Astro.params.lang || "ar") as Locale;
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 const breadcrumbs = [
   { label: strings.breadcrumb.home, href: localePath('/', lang) },
@@ -35,9 +36,9 @@ const others = doctors.filter((d) => !d.data.featured).sort(sortByOrder);
           <h2 class="mb-6 text-lg font-bold text-ink-900">{strings.team.featuredTitle}</h2>
           <CardGrid cols={3} gap="md">
             {featured.map((doctor) => {
-              const name = lang === 'ar' ? doctor.data.nameAr : doctor.data.name;
-              const specialty = lang === 'ar' ? doctor.data.specialtyAr : doctor.data.specialty;
-              const bio = lang === 'ar' ? doctor.data.bioAr : doctor.data.bio;
+              const name = pickLocalized(doctor.data.name, lang, fallback);
+              const specialty = pickLocalized(doctor.data.specialty, lang, fallback);
+              const bio = pickLocalized(doctor.data.bio, lang, fallback);
               const imageBadge = doctor.data.certified
                 ? { label: strings.team.certified, iconPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' }
                 : undefined;
@@ -67,9 +68,10 @@ const others = doctors.filter((d) => !d.data.featured).sort(sortByOrder);
               <CardDoctor
                 doctor={doctor}
                 lang={lang}
+                defaultLanguage={fallback ?? FALLBACK_LANGUAGES[0]}
                 certifiedLabel={strings.team.certified}
                 profileLabel={strings.team.profileLabel}
-                imageAlt={lang === 'ar' ? doctor.data.nameAr : doctor.data.name}
+                imageAlt={pickLocalized(doctor.data.name, lang, fallback)}
               />
             ))}
           </CardGrid>

@@ -43,7 +43,7 @@
         </div>
 
         <!-- Contact info panel -->
-        <div class="space-y-0" :dir="lang === 'ar' ? 'rtl' : 'ltr'">
+        <div class="space-y-0" :dir="isRTL(lang) ? 'rtl' : 'ltr'">
           <!-- Address -->
           <div class="contact-row flex items-start gap-6 py-5 border-b border-ink-200">
             <div class="font-mono text-[11px] uppercase text-ink-400 tracking-wider min-w-[90px] pt-0.5">{{ strings.contact.addressLabel }}</div>
@@ -96,7 +96,7 @@
               @click="showForm = !showForm"
               class="btn btn-teal w-full justify-center"
             >
-              {{ showForm ? (isAr ? 'إغلاق النموذج' : 'Close Form') : strings.contact.formTitle }}
+              {{ showForm ? (isRTL(lang) ? 'إغلاق النموذج' : 'Close Form') : strings.contact.formTitle }}
             </button>
           </div>
 
@@ -215,12 +215,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { useMotion } from "@vueuse/motion";
+import { isRTL, type Locale } from "../../i18n";
 
-const props = defineProps<{ strings: any; lang: "ar" | "en" }>();
+const props = defineProps<{ strings: any; lang: Locale }>();
 
-const isAr = computed(() => props.lang === "ar");
 const showForm = ref(false);
 const name = ref("");
 const phone = ref("");
@@ -241,18 +241,18 @@ const phoneRegex = /^(\+20|0020|0)?1[0125]\d{8}$|^\+?[\d\s\-()]{7,15}$/;
 function validateField(field: "name" | "phone" | "message") {
   if (field === "name") {
     errors.name = name.value.trim().length < 2
-      ? (isAr.value ? "الرجاء إدخال الاسم الكامل" : "Please enter your full name")
+      ? (isRTL(props.lang) ? "الرجاء إدخال الاسم الكامل" : "Please enter your full name")
       : "";
   }
   if (field === "phone") {
     const cleaned = phone.value.replace(/\s/g, "");
     errors.phone = !phoneRegex.test(cleaned)
-      ? (isAr.value ? "رقم الهاتف غير صحيح" : "Please enter a valid phone number")
+      ? (isRTL(props.lang) ? "رقم الهاتف غير صحيح" : "Please enter a valid phone number")
       : "";
   }
   if (field === "message") {
     errors.message = message.value.trim().length < 10
-      ? (isAr.value ? "الرجاء كتابة رسالة لا تقل عن 10 أحرف" : "Message must be at least 10 characters")
+      ? (isRTL(props.lang) ? "الرجاء كتابة رسالة لا تقل عن 10 أحرف" : "Message must be at least 10 characters")
       : "";
   }
 }
@@ -273,7 +273,7 @@ function showToast(type: "success" | "error", msg: string) {
 
 const submit = async () => {
   if (!validateAll()) {
-    showToast("error", isAr.value ? "يرجى تصحيح الأخطاء قبل الإرسال" : "Please fix the errors before submitting");
+    showToast("error", isRTL(props.lang) ? "يرجى تصحيح الأخطاء قبل الإرسال" : "Please fix the errors before submitting");
     return;
   }
   loading.value = true;
@@ -291,12 +291,12 @@ const submit = async () => {
       name.value = "";
       phone.value = "";
       message.value = "";
-      showToast("success", isAr.value ? "تم إرسال رسالتك بنجاح!" : "Message sent successfully!");
+      showToast("success", isRTL(props.lang) ? "تم إرسال رسالتك بنجاح!" : "Message sent successfully!");
     } else {
-      showToast("error", isAr.value ? "حدث خطأ، حاول مرة أخرى" : "Something went wrong, please try again");
+      showToast("error", isRTL(props.lang) ? "حدث خطأ، حاول مرة أخرى" : "Something went wrong, please try again");
     }
   } catch {
-    showToast("error", isAr.value ? "خطأ في الاتصال، تأكد من الإنترنت" : "Connection error, please check your internet");
+    showToast("error", isRTL(props.lang) ? "خطأ في الاتصال، تأكد من الإنترنت" : "Connection error, please check your internet");
   } finally {
     loading.value = false;
   }

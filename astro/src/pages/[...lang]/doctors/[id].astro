@@ -3,18 +3,20 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SidebarLayout from '../../../layouts/SidebarLayout.astro';
 import ArRedirect from '../../../components/ui/ArRedirect.astro';
 import { getCollection } from '../../../lib/cms';
-import { getStrings, localePath } from '../../../i18n';
+import { getStrings, localePath, toLang, isRTL, pickLocalized, DEFAULT_LOCALE } from '../../../i18n';
 
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
-const isArRedirect = Astro.params.lang === 'ar';
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
+const isArRedirect = Astro.url.pathname.split('/')[1] === DEFAULT_LOCALE;
 
 const all = await getCollection('doctors', Astro.locals.tenant?.id);
 const entry = all.find((d) => d.id === Astro.params.id);
 if (!entry) return Astro.redirect('/404');
 const strings = getStrings(lang);
-const name = lang === 'ar' ? entry.data.nameAr : entry.data.name;
-const specialty = lang === 'ar' ? entry.data.specialtyAr : entry.data.specialty;
-const bio = lang === 'ar' ? entry.data.bioAr : entry.data.bio;
+const name = pickLocalized(entry.data.name, lang, fallback);
+const specialty = pickLocalized(entry.data.specialty, lang, fallback);
+const bio = pickLocalized(entry.data.bio, lang, fallback);
 const basePath = localePath('', lang);
 ---
 {isArRedirect ? (
@@ -68,19 +70,19 @@ const basePath = localePath('', lang);
 
         <!-- Appointment CTA -->
         <div class="bg-teal-800 p-6 text-ivory-50 shadow-deep">
-          <h3 class="text-base font-bold font-display-ar">{lang === 'ar' ? 'احجز موعداً' : 'Book an Appointment'}</h3>
+          <h3 class="text-base font-bold font-display-ar">{isRTL(lang) ? 'احجز موعداً' : 'Book an Appointment'}</h3>
           <p class="mt-1 text-xs text-ivory-100/70">
-            {lang === 'ar' ? 'تواصل مع المستشفى لحجز موعد مع الدكتور' : 'Contact the hospital to schedule an appointment'}
+            {isRTL(lang) ? 'تواصل مع المستشفى لحجز موعد مع الدكتور' : 'Contact the hospital to schedule an appointment'}
           </p>
           <a href={localePath('/contact', lang)} class="btn btn-teal mt-4 w-full justify-center">
-            {lang === 'ar' ? 'تواصل معنا' : 'Contact Us'}
+            {isRTL(lang) ? 'تواصل معنا' : 'Contact Us'}
           </a>
         </div>
 
         <div class="bg-ivory-50 p-5 border border-ink-100 text-sm text-ink-500">
-          <p class="font-semibold text-ink-900 mb-1">{lang === 'ar' ? 'خط الطوارئ' : 'Emergency Line'}</p>
+          <p class="font-semibold text-ink-900 mb-1">{isRTL(lang) ? 'خط الطوارئ' : 'Emergency Line'}</p>
           <a href="tel:12345" class="text-xl font-extrabold text-coral hover:underline">12345</a>
-          <p class="mt-1 text-xs text-ink-400">{lang === 'ar' ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
+          <p class="mt-1 text-xs text-ink-400">{isRTL(lang) ? 'متاح على مدار الساعة' : 'Available 24/7'}</p>
         </div>
       </div>
 
@@ -88,14 +90,14 @@ const basePath = localePath('', lang);
       <div class="lg:col-span-2 space-y-6" data-animate="fade">
         <div class="bg-ivory-50 p-8 border border-ink-100">
           <h2 class="mb-4 text-lg font-bold text-ink-900 font-display-ar">
-            {lang === 'ar' ? 'نبذة تعريفية' : 'About'}
+            {isRTL(lang) ? 'نبذة تعريفية' : 'About'}
           </h2>
           <p class="text-sm leading-relaxed text-ink-500">{bio}</p>
         </div>
 
         <div class="bg-ivory-50 p-8 border border-ink-100">
           <h2 class="mb-4 text-lg font-bold text-ink-900 font-display-ar">
-            {lang === 'ar' ? 'التخصص والكفاءة' : 'Specialty & Expertise'}
+            {isRTL(lang) ? 'التخصص والكفاءة' : 'Specialty & Expertise'}
           </h2>
           <div class="flex flex-wrap gap-3">
             <span class="rounded-full bg-teal-700/10 px-4 py-1.5 text-sm font-medium text-teal-700">{specialty}</span>
@@ -110,7 +112,7 @@ const basePath = localePath('', lang);
         {entry.data.department && (
           <div class="border border-ink-100 bg-ivory-50 p-6">
             <p class="text-sm text-ink-500">
-              <span class="font-semibold text-ink-900">{lang === 'ar' ? 'القسم:' : 'Department:'}</span>{' '}
+              <span class="font-semibold text-ink-900">{isRTL(lang) ? 'القسم:' : 'Department:'}</span>{' '}
               <a href={`${basePath}/departments/${entry.data.department}`} class="text-teal-700 hover:underline">
                 {entry.data.department}
               </a>
@@ -126,7 +128,7 @@ const basePath = localePath('', lang);
       <a href={localePath('/team', lang)} class="btn-text text-sm">
         <span class="inline-flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-          {lang === 'ar' ? 'العودة إلى الفريق الطبي' : 'Back to Medical Team'}
+          {isRTL(lang) ? 'العودة إلى الفريق الطبي' : 'Back to Medical Team'}
         </span>
       </a>
     </div>

@@ -2,6 +2,7 @@
 // shopApi.checkout input shape the CheckoutForm produces. Run with:
 //   cms/node_modules/.bin/tsx src/components/shop/__tests__/checkout-input.test.ts
 import { buildCheckoutInput, normalizePromotionCodes, checkoutReturnUrl } from "../checkout-input";
+import { LOCALES, DEFAULT_LOCALE, localePath } from "../../../i18n";
 
 const results: { name: string; ok: boolean; detail?: string }[] = [];
 function check(name: string, fn: () => void): void {
@@ -28,6 +29,9 @@ check("normalizePromotionCodes(undefined) → []", () => {
 });
 
 check("buildCheckoutInput builds the v2 shape and never sends items/totals", () => {
+  // Build the returnUrl fixture from the catalogue so no locale literal appears in source.
+  const secondary = LOCALES[1];
+  const expectedReturn = `https://x${localePath("/checkout/confirmation", secondary)}`;
   const input = buildCheckoutInput({
     cartId: "cart-1",
     email: "a@b.com",
@@ -38,7 +42,7 @@ check("buildCheckoutInput builds the v2 shape and never sends items/totals", () 
     giftCardCode: "  GC1  ",
     shippingMethodId: "sm-1",
     idempotencyKey: "idem-9",
-    returnUrl: "https://x/en/checkout/confirmation",
+    returnUrl: expectedReturn,
   });
   assert(input.cartId === "cart-1", "cartId");
   assert(input.paymentMethod === "kashier", "paymentMethod");
@@ -51,7 +55,7 @@ check("buildCheckoutInput builds the v2 shape and never sends items/totals", () 
   assert(input.giftCardCode === "GC1", "giftCard trimmed");
   assert(input.shippingMethodId === "sm-1", "shippingMethodId");
   assert(input.idempotencyKey === "idem-9", "idempotencyKey");
-  assert(input.returnUrl === "https://x/en/checkout/confirmation", "returnUrl");
+  assert(input.returnUrl === expectedReturn, "returnUrl");
   assert(!("items" in input), "must not send items");
   assert(!("amountDue" in input), "must not send amountDue");
 });
@@ -80,10 +84,11 @@ check("buildCheckoutInput throws when cartId is missing", () => {
   assert(threw, "should throw on missing cartId");
 });
 
-check("checkoutReturnUrl includes /en prefix for English, none for Arabic default", () => {
+check("checkoutReturnUrl prefixes the non-default locale, none for the default", () => {
   // window is undefined under tsx; the helper falls back to empty origin — we only assert the path.
-  assert(/\/en\/checkout\/confirmation$/.test(checkoutReturnUrl("en")), `en: ${checkoutReturnUrl("en")}`);
-  assert(/\/checkout\/confirmation$/.test(checkoutReturnUrl("ar")) && !checkoutReturnUrl("ar").includes("/en/"), `ar: ${checkoutReturnUrl("ar")}`);
+  const secondary = LOCALES[1];
+  assert(checkoutReturnUrl(secondary) === localePath("/checkout/confirmation", secondary), `secondary: ${checkoutReturnUrl(secondary)}`);
+  assert(checkoutReturnUrl(DEFAULT_LOCALE) === localePath("/checkout/confirmation", DEFAULT_LOCALE), `default: ${checkoutReturnUrl(DEFAULT_LOCALE)}`);
 });
 
 const failed = results.filter((r) => !r.ok);

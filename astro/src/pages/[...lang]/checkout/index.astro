@@ -1,12 +1,14 @@
 ---
 import ShopLayout from "../../../layouts/ShopLayout.astro";
-import { getStrings } from "../../../i18n";
+import { getStrings, toLang } from "../../../i18n";
 import CheckoutForm from "../../../components/shop/CheckoutForm.vue";
 
 // Checkout (Wave E3). Submits the plugin-first v2 payload via shopApi.checkout (cartId +
 // paymentMethod + shippingAddress + …); the Astro proxy signs + forwards to the CMS signed checkout
 // endpoint. COD/bank finish inline; Paymob/Kashier redirect to the hosted checkout URL.
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 ---
 <ShopLayout lang={lang} strings={strings} title={`${strings.shop.checkout.title} | ${strings.site.name}`} description={strings.shop.checkout.title}>

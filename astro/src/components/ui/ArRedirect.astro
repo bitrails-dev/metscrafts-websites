@@ -1,7 +1,11 @@
 ---
+import { DEFAULT_LOCALE } from '../../i18n';
 const { url } = Astro.props;
+// Static redirect stub: locale is always the unprefixed default (the only caller is the bare
+// Arabic-root redirect). Derive the code from the catalogue rather than inlining a literal.
+const lang = DEFAULT_LOCALE;
 ---
-<html lang="ar" dir="rtl">
+<html lang={lang} dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="refresh" content={`0;url=${url}`} />

@@ -1,12 +1,20 @@
 ---
 import CardBase from './CardBase.astro';
 
-import { localePath } from '../../i18n';
+import { localePath, pickLocalized, type Locale } from '../../i18n';
 
-const { dept, lang, centerLabel, linkLabel } = Astro.props;
-const name = lang === 'ar' ? dept.data.nameAr : dept.data.name;
+interface Props {
+  dept: any;
+  lang: Locale;
+  centerLabel?: string;
+  linkLabel?: string;
+  defaultLanguage: Locale;
+}
+const { dept, lang, centerLabel, linkLabel, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
+const name = pickLocalized(dept.data.name, lang, fallback);
 const description =
-	lang === 'ar' ? dept.data.descriptionAr : dept.data.description;
+	pickLocalized(dept.data.description, lang, fallback);
 const href = localePath(`/departments/${dept.id}`, lang);
 
 const iconPaths: Record<string, string> = {

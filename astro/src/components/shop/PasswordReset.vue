@@ -6,9 +6,9 @@
 //   shopApi.auth.resetPassword. On success or an invalid/expired token, surfaces the right message.
 import { ref, computed, onMounted } from "vue";
 import { shopApi } from "./api";
-import { localePath } from "../../i18n";
+import { localePath, type Locale } from "../../i18n";
 
-const props = defineProps<{ lang: "ar" | "en"; strings: any; mode: "request" | "confirm"; token?: string }>();
+const props = defineProps<{ lang: Locale; strings: any; mode: "request" | "confirm"; token?: string }>();
 const s = computed(() => props.strings.shop.reset);
 const sk = computed(() => props.strings.shop);
 

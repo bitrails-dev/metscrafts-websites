@@ -1,26 +1,31 @@
 ---
+import { isRTL, type Locale } from '../../i18n';
+
+interface Props {
+	lang: Locale;
+	strings: any;
+}
 const { lang, strings } = Astro.props;
-const isAr = lang === "ar";
 
 // Static article data using the events section strings + sample data
 const articles = [
 	{
-		category: isAr ? 'تقارير' : 'Reports',
+		category: isRTL(lang) ? 'تقارير' : 'Reports',
 		date: '2025-03-15',
-		title: isAr ? 'تطوير منظومة العناية المركزة' : 'ICU Modernization Initiative',
-		excerpt: isAr ? 'مشروع شامل لتجديد وتطوير أقسام العناية المركزة بأحدث الأجهزة والتقنيات الطبية.' : 'A comprehensive project to renovate ICU departments with state-of-the-art medical equipment and technology.',
+		title: isRTL(lang) ? 'تطوير منظومة العناية المركزة' : 'ICU Modernization Initiative',
+		excerpt: isRTL(lang) ? 'مشروع شامل لتجديد وتطوير أقسام العناية المركزة بأحدث الأجهزة والتقنيات الطبية.' : 'A comprehensive project to renovate ICU departments with state-of-the-art medical equipment and technology.',
 	},
 	{
-		category: isAr ? 'أبحاث' : 'Research',
+		category: isRTL(lang) ? 'أبحاث' : 'Research',
 		date: '2025-02-20',
-		title: isAr ? 'إنجاز جراحي فريد في قسم القلب' : 'Landmark Cardiac Surgery Achievement',
-		excerpt: isAr ? 'فريق جراحة القلب يحقق نجاحًا في عملية جراحية معقدة لأول مرة في المنطقة.' : 'The cardiac surgery team succeeds in a complex surgical procedure, a first in the region.',
+		title: isRTL(lang) ? 'إنجاز جراحي فريد في قسم القلب' : 'Landmark Cardiac Surgery Achievement',
+		excerpt: isRTL(lang) ? 'فريق جراحة القلب يحقق نجاحًا في عملية جراحية معقدة لأول مرة في المنطقة.' : 'The cardiac surgery team succeeds in a complex surgical procedure, a first in the region.',
 	},
 	{
-		category: isAr ? 'أخبار' : 'News',
+		category: isRTL(lang) ? 'أخبار' : 'News',
 		date: '2025-01-10',
-		title: isAr ? 'المستشفى تحصل على اعتماد جديد' : 'Hospital Receives New Accreditation',
-		excerpt: isAr ? 'حصول المستشفى على اعتماد إقليمي جديد يعكس التزامها بمعايير الجودة العالمية.' : 'The hospital earns a new regional accreditation reflecting its commitment to global quality standards.',
+		title: isRTL(lang) ? 'المستشفى تحصل على اعتماد جديد' : 'Hospital Receives New Accreditation',
+		excerpt: isRTL(lang) ? 'حصول المستشفى على اعتماد إقليمي جديد يعكس التزامها بمعايير الجودة العالمية.' : 'The hospital earns a new regional accreditation reflecting its commitment to global quality standards.',
 	},
 ];
 ---
@@ -33,10 +38,10 @@ const articles = [
 			<div>
 				<div class="inline-flex items-center gap-2.5 mb-4">
 					<div class="w-8 h-px bg-teal-600"></div>
-					<p class="h-eyebrow">{isAr ? 'آخر الأخبار' : 'Latest News'}</p>
+					<p class="h-eyebrow">{isRTL(lang) ? 'آخر الأخبار' : 'Latest News'}</p>
 				</div>
 				<h2 class="font-display-ar font-medium text-navy-900 leading-none tracking-tight" style="font-size: clamp(36px, 4vw, 56px); line-height: 1.1;">
-					{isAr ? 'مقالات وأخبار' : 'Articles & News'}
+					{isRTL(lang) ? 'مقالات وأخبار' : 'Articles & News'}
 				</h2>
 			</div>
 			<div class="flex items-end">

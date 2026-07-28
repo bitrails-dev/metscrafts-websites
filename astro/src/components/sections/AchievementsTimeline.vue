@@ -8,8 +8,8 @@
       <span class="inline-flex items-center rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
         {{ item.year }}
       </span>
-      <h3 class="mt-3 font-display-ar text-lg font-medium text-navy-900">{{ lang === 'ar' ? item.titleAr : item.title }}</h3>
-      <p class="mt-2 text-sm text-ink-500 leading-relaxed">{{ lang === 'ar' ? item.descriptionAr : item.description }}</p>
+      <h3 class="mt-3 font-display-ar text-lg font-medium text-navy-900">{{ pickLocalized(item.title, lang, defaultLanguage) }}</h3>
+      <p class="mt-2 text-sm text-ink-500 leading-relaxed">{{ pickLocalized(item.description, lang, defaultLanguage) }}</p>
     </div>
     <div
       v-for="n in fillerCount"
@@ -22,10 +22,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { pickLocalized, type Locale } from '../../i18n';
 
 const props = defineProps<{
-  items: { year: number; title: string; titleAr: string; description: string; descriptionAr: string; icon?: string }[];
-  lang: string;
+  items: { year: number; title: Record<string, string>; description: Record<string, string>; icon?: string }[];
+  lang: Locale;
+  defaultLanguage: Locale;
   strings: any;
 }>();
 

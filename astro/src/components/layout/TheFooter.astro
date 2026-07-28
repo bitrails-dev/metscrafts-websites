@@ -1,7 +1,7 @@
 ---
 import SectionLabel from "../ui/SectionLabel.astro";
 
-import { localePath } from '../../i18n';
+import { localePath, isRTL } from '../../i18n';
 
 const { lang, strings, features } = Astro.props as { lang: string; strings: any; features?: string[] };
 const year = new Date().getFullYear();
@@ -68,7 +68,7 @@ const social = Astro.locals.tenant?.contact?.social ?? {};
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-coral opacity-75"></span>
             <span class="relative inline-flex h-2 w-2 rounded-full bg-coral"></span>
           </span>
-          {lang === "ar" ? `طوارئ: ${emergency}` : `Emergency: ${emergency}`}
+          {isRTL(lang) ? `طوارئ: ${emergency}` : `Emergency: ${emergency}`}
         </div>
       </div>
 

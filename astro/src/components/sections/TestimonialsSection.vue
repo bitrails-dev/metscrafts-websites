@@ -7,7 +7,7 @@
         <div>
           <div class="inline-flex items-center gap-2.5 mb-4">
             <div class="w-8 h-px bg-teal-600"></div>
-            <p class="h-eyebrow">{{ isAr ? 'آراء المرضى' : 'Patient Voices' }}</p>
+            <p class="h-eyebrow">{{ isRTL(lang) ? 'آراء المرضى' : 'Patient Voices' }}</p>
           </div>
           <h2 class="font-display-ar font-medium text-navy-900 leading-none tracking-tight" style="font-size: clamp(36px, 4vw, 56px); line-height: 1.1;">
             {{ strings.testimonials.title }}
@@ -68,16 +68,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useMotion } from "@vueuse/motion";
 import { useSwipe } from "@vueuse/core";
+import { isRTL, DEFAULT_LOCALE, type Locale } from "../../i18n";
 
 const props = withDefaults(
-  defineProps<{ strings: any; items: { quote: string; name: string; caseType: string; avatar: string }[]; lang?: string }>(),
-  { items: () => [], lang: "ar" }
+  defineProps<{ strings: any; items: { quote: string; name: string; caseType: string; avatar: string }[]; lang?: Locale }>(),
+  { items: () => [], lang: DEFAULT_LOCALE }
 );
 
-const isAr = computed(() => props.lang === "ar");
 const activeIndex = ref(0);
 const timer = ref<number | null>(null);
 const root = ref<HTMLElement | null>(null);

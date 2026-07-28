@@ -1,11 +1,13 @@
 ---
 import ShopLayout from "../../../../layouts/ShopLayout.astro";
-import { getStrings } from "../../../../i18n";
+import { getStrings, toLang } from "../../../../i18n";
 import ProductDetail from "../../../../components/shop/ProductDetail.vue";
 
 // Product detail (Wave E3). The product is fetched client-side via shopApi.product(slug); this page
 // is a seam-free shell that just forwards the slug param to the island.
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 const slug = (Astro.params.slug ?? "") as string;
 ---

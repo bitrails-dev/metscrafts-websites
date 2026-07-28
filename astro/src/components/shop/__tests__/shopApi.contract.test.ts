@@ -7,6 +7,7 @@
 // It also typechecks as part of the project (tsc --noEmit), which constrains the integration-owner's
 // shopApi impl to the same wire shapes.
 import { shopApi } from "../api";
+import { LOCALES, DEFAULT_LOCALE, localePath } from "../../../i18n";
 
 interface Captured {
   url: string;
@@ -55,7 +56,7 @@ async function main(): Promise<void> {
   });
 
   installFetch();
-  await shopApi.catalog({ q: "mask", category: "med", page: 2, limit: 5, locale: "ar" });
+  await shopApi.catalog({ q: "mask", category: "med", page: 2, limit: 5, locale: DEFAULT_LOCALE });
   check("catalog(params) → GET with query string", () => {
     const u = last().url;
     assert(u.startsWith("/api/store/v2/catalog?"), `url was ${u}`);
@@ -63,14 +64,14 @@ async function main(): Promise<void> {
     assert(u.includes("category=med"), "category");
     assert(u.includes("page=2"), "page");
     assert(u.includes("limit=5"), "limit");
-    assert(u.includes("locale=ar"), "locale");
+    assert(u.includes(`locale=${DEFAULT_LOCALE}`), "locale");
   });
 
   installFetch();
-  await shopApi.product("a b", "en");
+  await shopApi.product("a b", LOCALES[1]);
   check("product(slug, locale) → GET /catalog/:slug?locale= (encoded)", () => {
     assert(last().method === "GET", "method");
-    assert(last().url === "/api/store/v2/catalog/a%20b?locale=en", `url was ${last().url}`);
+    assert(last().url === `/api/store/v2/catalog/a%20b?locale=${LOCALES[1]}`, `url was ${last().url}`);
   });
 
   installFetch();
@@ -127,12 +128,15 @@ async function main(): Promise<void> {
   });
 
   installFetch();
+  // Build the returnUrl fixture from the catalogue so no locale literal appears in source.
+  const secondary = LOCALES[1];
+  const expectedReturn = `https://example${localePath("/checkout/confirmation", secondary)}`;
   await shopApi.checkout({
     cartId: "cart-123",
     paymentMethod: "paymob",
     shippingAddress: { city: "Cairo", country: "EG" },
     idempotencyKey: "idem-1",
-    returnUrl: "https://example/en/checkout/confirmation",
+    returnUrl: expectedReturn,
   });
   check("checkout(input) → POST /checkout with idempotency-key header; no items/totals sent", () => {
     const c = last();
@@ -141,7 +145,7 @@ async function main(): Promise<void> {
     const b = bodyOf(c);
     assert(b.cartId === "cart-123" && b.paymentMethod === "paymob", "cartId/paymentMethod");
     assert(b.shippingAddress.city === "Cairo", "shippingAddress");
-    assert(b.returnUrl === "https://example/en/checkout/confirmation", "returnUrl");
+    assert(b.returnUrl === expectedReturn, "returnUrl");
     assert(!("items" in b), "must not send items");
     assert(!("amountDue" in b) && !("total" in b), "must not send totals");
   });

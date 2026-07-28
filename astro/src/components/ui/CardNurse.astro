@@ -1,12 +1,19 @@
 ---
 import CardBase from './CardBase.astro';
+import { isRTL, pickLocalized, type Locale } from '../../i18n';
 
-const { staff, lang } = Astro.props;
-const name = lang === 'ar' ? staff.data.nameAr : staff.data.name;
-const role = lang === 'ar' ? staff.data.roleAr : staff.data.role;
+interface Props {
+  staff: any;
+  lang: Locale;
+  defaultLanguage: Locale;
+}
+const { staff, lang, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
+const name = pickLocalized(staff.data.name, lang, fallback);
+const role = pickLocalized(staff.data.role, lang, fallback);
 
 const badges = staff.data.featured
-  ? [{ label: lang === 'ar' ? 'رئيسية' : 'Chief', color: 'bg-teal-700/10 text-teal-700' }]
+  ? [{ label: isRTL(lang) ? 'رئيسية' : 'Chief', color: 'bg-teal-700/10 text-teal-700' }]
   : [];
 ---
 

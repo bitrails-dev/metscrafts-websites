@@ -1,11 +1,16 @@
 ---
 import { getCollection } from "../../lib/cms";
-import { localePath } from "../../i18n";
+import { isRTL, localePath, pickLocalized, type Locale } from "../../i18n";
 import CardBase from "../ui/CardBase.astro";
 import CardGrid from "../ui/CardGrid.astro";
 
-const { lang, strings } = Astro.props;
-const isAr = lang === "ar";
+interface Props {
+	lang: Locale;
+	strings: any;
+	defaultLanguage: Locale;
+}
+const { lang, strings, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
 const doctors = await getCollection("doctors", Astro.locals.tenant?.id);
 const sortByOrder = (a: any, b: any) => (a.data.order ?? 999) - (b.data.order ?? 999);
 const featured = doctors.filter((doc) => doc.data.featured).sort(sortByOrder);
@@ -20,7 +25,7 @@ const displayDoctors = featured.length > 0 ? featured.slice(0, 3) : others.slice
 			<div>
 				<div class="inline-flex items-center gap-2.5 mb-4">
 					<div class="w-8 h-px bg-teal-600"></div>
-					<p class="h-eyebrow">{isAr ? 'فريقنا الطبي' : 'Our Medical Team'}</p>
+					<p class="h-eyebrow">{isRTL(lang) ? 'فريقنا الطبي' : 'Our Medical Team'}</p>
 				</div>
 				<h2 class="font-display-ar font-medium text-navy-900 leading-none tracking-tight" style="font-size: clamp(36px, 4vw, 56px); line-height: 1.1;">
 					{strings.team.title}
@@ -33,9 +38,9 @@ const displayDoctors = featured.length > 0 ? featured.slice(0, 3) : others.slice
 
 		<CardGrid cols={3} gap="md">
 			{displayDoctors.map((doctor) => {
-				const name = isAr ? doctor.data.nameAr : doctor.data.name;
-				const specialty = isAr ? doctor.data.specialtyAr : doctor.data.specialty;
-				const bio = isAr ? doctor.data.bioAr : doctor.data.bio;
+				const name = pickLocalized(doctor.data.name, lang, fallback);
+				const specialty = pickLocalized(doctor.data.specialty, lang, fallback);
+				const bio = pickLocalized(doctor.data.bio, lang, fallback);
 				const href = localePath(`/doctors/${doctor.id}`, lang);
 				const imageBadge = doctor.data.certified
 					? { label: strings.team.certified, iconPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' }

@@ -4,9 +4,11 @@ import SidebarLayout from '../../../layouts/SidebarLayout.astro';
 import PageHeader from '../../../components/ui/PageHeader.astro';
 import FilteredCardGrid from '../../../components/ui/FilteredCardGrid.vue';
 import { getCollection } from '../../../lib/cms';
-import { getStrings, localePath } from '../../../i18n';
+import { getStrings, localePath, toLang, isRTL, UNPREFIXED_LOCALE, FALLBACK_LANGUAGES } from '../../../i18n';
 
-const lang: "ar" | "en" = Astro.params.lang === "en" ? "en" : "ar";
+const tenant = Astro.locals.tenant;
+const lang = toLang(Astro.params.lang, tenant?.languages, tenant?.defaultLanguage);
+const fallback = tenant?.defaultLanguage;
 const strings = getStrings(lang);
 
 const allArticles = (await getCollection('articles', Astro.locals.tenant?.id)).sort(
@@ -15,32 +17,30 @@ const allArticles = (await getCollection('articles', Astro.locals.tenant?.id)).s
 
 // Categories come from the CMS; fall back to the legacy fixed list if the collection isn't
 // available yet (e.g. before the migration is applied).
+const secondaryLocale = FALLBACK_LANGUAGES.find((l) => l !== UNPREFIXED_LOCALE) ?? UNPREFIXED_LOCALE;
 let categories = [
-  { value: 'hospital-news', labelEn: 'Hospital News', labelAr: 'أخبار المستشفى' },
-  { value: 'health-tips', labelEn: 'Health Tips', labelAr: 'نصائح صحية' },
-  { value: 'research', labelEn: 'Research', labelAr: 'الأبحاث' },
-  { value: 'events', labelEn: 'Events', labelAr: 'الفعاليات' },
+  { value: 'hospital-news', label: { [UNPREFIXED_LOCALE]: 'أخبار المستشفى', [secondaryLocale]: 'Hospital News' } },
+  { value: 'health-tips', label: { [UNPREFIXED_LOCALE]: 'نصائح صحية', [secondaryLocale]: 'Health Tips' } },
+  { value: 'research', label: { [UNPREFIXED_LOCALE]: 'الأبحاث', [secondaryLocale]: 'Research' } },
+  { value: 'events', label: { [UNPREFIXED_LOCALE]: 'الفعاليات', [secondaryLocale]: 'Events' } },
 ];
 try {
   const cats = await getCollection('categories', Astro.locals.tenant?.id);
-  if (cats.length) categories = cats.map((c) => ({ value: c.id, labelEn: c.data.name, labelAr: c.data.nameAr }));
+  if (cats.length) categories = cats.map((c) => ({ value: c.id, label: c.data.name }));
 } catch { /* CMS without categories collection yet — keep the fallback */ }
 
 const items = allArticles.map((article) => ({
   id: article.id,
   slug: article.id,
   title: article.data.title,
-  titleAr: article.data.titleAr,
   category: article.data.category,
   thumbnail: article.data.thumbnail,
   date: article.data.date.toISOString(),
-  summary: '',
-  summaryAr: '',
 }));
 
 const breadcrumbs = [
   { label: strings.breadcrumb.home, href: localePath('/', lang) },
-  { label: lang === 'ar' ? 'المقالات' : 'Articles' },
+  { label: isRTL(lang) ? 'المقالات' : 'Articles' },
 ];
 ---
 
@@ -49,14 +49,14 @@ const breadcrumbs = [
   strings={strings}
   breadcrumbs={breadcrumbs}
 
-  title={`${lang === 'ar' ? 'المقالات' : 'Articles'} | ${strings.site.name}`}
-  description={lang === 'ar' ? 'اقرأ أحدث المقالات الطبية والأخبار من مستشفانا' : 'Read the latest medical articles and news from our hospital'}
+  title={`${isRTL(lang) ? 'المقالات' : 'Articles'} | ${strings.site.name}`}
+  description={isRTL(lang) ? 'اقرأ أحدث المقالات الطبية والأخبار من مستشفانا' : 'Read the latest medical articles and news from our hospital'}
 >
   <SidebarLayout lang={lang} strings={strings} breadcrumbs={breadcrumbs}>
     <div class="mx-auto max-w-[1440px] px-6 pt-8">
       <PageHeader
-        title={lang === 'ar' ? 'المقالات' : 'Articles'}
-        subtitle={lang === 'ar' ? 'أحدث المقالات الطبية والمعلومات الصحية' : 'Latest medical articles and health information'}
+        title={isRTL(lang) ? 'المقالات' : 'Articles'}
+        subtitle={isRTL(lang) ? 'أحدث المقالات الطبية والمعلومات الصحية' : 'Latest medical articles and health information'}
       />
     </div>
 
@@ -66,6 +66,7 @@ const breadcrumbs = [
         items={items}
         categories={categories}
         lang={lang}
+        defaultLanguage={fallback ?? FALLBACK_LANGUAGES[0]}
         basePath={localePath('/articles', lang)}
         itemsPerPage={8}
         cardType="article"

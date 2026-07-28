@@ -1,11 +1,20 @@
 ---
 import CardBase from './CardBase.astro';
 
-import { localePath } from '../../i18n';
+import { localePath, pickLocalized, type Locale } from '../../i18n';
 
-const { doctor, lang, certifiedLabel, profileLabel, imageAlt } = Astro.props;
-const name = lang === 'ar' ? doctor.data.nameAr : doctor.data.name;
-const specialty = lang === 'ar' ? doctor.data.specialtyAr : doctor.data.specialty;
+interface Props {
+  doctor: any;
+  lang: Locale;
+  certifiedLabel?: string;
+  profileLabel?: string;
+  imageAlt?: string;
+  defaultLanguage: Locale;
+}
+const { doctor, lang, certifiedLabel, profileLabel, imageAlt, defaultLanguage } = Astro.props;
+const fallback = defaultLanguage;
+const name = pickLocalized(doctor.data.name, lang, fallback);
+const specialty = pickLocalized(doctor.data.specialty, lang, fallback);
 const href = localePath(`/doctors/${doctor.id}`, lang);
 
 const imageBadge = doctor.data.certified
