@@ -3,6 +3,7 @@ import node from "@astrojs/node";
 import vue from "@astrojs/vue";
 import tailwind from "@astrojs/tailwind";
 import sitemap from "@astrojs/sitemap";
+import { LOCALES, HREFLANG_TAGS, UNPREFIXED_LOCALE } from "./src/i18n";
 
 const site = process.env.PUBLIC_SITE ?? "https://dgh.bitrail.dev";
 const base = process.env.PUBLIC_BASE ?? "";
@@ -14,8 +15,8 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
   i18n: {
-    defaultLocale: "ar",
-    locales: ["ar", "en"],
+    defaultLocale: UNPREFIXED_LOCALE,
+    locales: [...LOCALES],
     routing: {
       prefixDefaultLocale: false,
     },
@@ -40,11 +41,10 @@ export default defineConfig({
   integrations: [
     sitemap({
       i18n: {
-        defaultLocale: "ar",
-        locales: {
-          ar: "ar-EG",
-          en: "en-US",
-        },
+        defaultLocale: UNPREFIXED_LOCALE,
+        locales: Object.fromEntries(
+          LOCALES.map((l) => [l, HREFLANG_TAGS[l]]),
+        ),
       },
     }),
     vue({ appEntrypoint: "/src/app.ts" }),

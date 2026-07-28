@@ -7,7 +7,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test:healthcare-settings": "tsx --test tests/healthcare-settings.test.ts"
+    "test:healthcare-settings": "tsx --test tests/healthcare-settings.test.ts",
+    "test:locale-invariants": "tsx scripts/check-locale-invariants.ts",
+    "test:locales": "tsx --test tests/locale-parity.test.ts tests/i18n-parity.test.ts tests/localized-mappers.test.ts tests/feature-route-gating.test.ts tests/locale-redirect.test.ts tests/switcher.test.ts tests/path-prefix-sweep.test.ts tests/non-content-locale-gate.test.ts tests/cms-locale-all.test.ts && pnpm test:locale-invariants"
   },
   "keywords": [],
   "author": "",
