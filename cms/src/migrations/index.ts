@@ -30,6 +30,7 @@ import * as migration_20260722_100250_store_orders_rels_plugin_slug from './2026
 import * as migration_20260722_100300_store_products_localization from './20260722_100300_store_products_localization';
 import * as migration_20260727_130000_add_and_backfill_healthcare_settings from './20260727_130000_add_and_backfill_healthcare_settings';
 import * as migration_20260727_130100_drop_healthcare_fields_from_tenants from './20260727_130100_drop_healthcare_fields_from_tenants';
+import * as migration_20260729_140000_hero_value_to_number from './20260729_140000_hero_value_to_number';
 
 export const migrations = [
   {
@@ -191,5 +192,10 @@ export const migrations = [
     up: migration_20260727_130100_drop_healthcare_fields_from_tenants.up,
     down: migration_20260727_130100_drop_healthcare_fields_from_tenants.down,
     name: '20260727_130100_drop_healthcare_fields_from_tenants',
+  },
+  {
+    up: migration_20260729_140000_hero_value_to_number.up,
+    down: migration_20260729_140000_hero_value_to_number.down,
+    name: '20260729_140000_hero_value_to_number',
   },
 ];

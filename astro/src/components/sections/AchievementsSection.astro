@@ -9,12 +9,14 @@ interface Props {
 const { lang, strings, stats } = Astro.props;
 const isAr = lang === 'ar';
 
-// Stats come from the tenant's healthcare-settings doc (passed in by the page). No settings → no items.
+// Stats come from the tenant's healthcare-settings doc. `value` is a non-localized number, formatted
+// per locale (Arabic-Indic in ar, ASCII in en); `unit` is localized text. No settings → no items.
+const nf = new Intl.NumberFormat(isAr ? 'ar-EG' : 'en');
 const items = stats ? [
-	{ value: isAr ? stats.years.valueAr       : stats.years.value,       unit: isAr ? stats.years.unitAr       : stats.years.unit,       label: strings.hero.stats.years       },
-	{ value: isAr ? stats.departments.valueAr : stats.departments.value, unit: isAr ? stats.departments.unitAr : stats.departments.unit, label: strings.hero.stats.departments },
-	{ value: isAr ? stats.patients.valueAr    : stats.patients.value,    unit: isAr ? stats.patients.unitAr    : stats.patients.unit,    label: strings.hero.stats.patients    },
-	{ value: isAr ? stats.staff.valueAr       : stats.staff.value,       unit: isAr ? stats.staff.unitAr       : stats.staff.unit,       label: strings.hero.stats.staff       },
+	{ value: nf.format(stats.years.value),       unit: isAr ? stats.years.unitAr       : stats.years.unit,       label: strings.hero.stats.years       },
+	{ value: nf.format(stats.departments.value), unit: isAr ? stats.departments.unitAr : stats.departments.unit, label: strings.hero.stats.departments },
+	{ value: nf.format(stats.patients.value),    unit: isAr ? stats.patients.unitAr    : stats.patients.unit,    label: strings.hero.stats.patients    },
+	{ value: nf.format(stats.staff.value),       unit: isAr ? stats.staff.unitAr       : stats.staff.unit,       label: strings.hero.stats.staff       },
 ] : [];
 ---
 

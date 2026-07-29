@@ -18,33 +18,40 @@ const rawDoc = {
   id: 1,
   tenant: 7,
   emergencyNumber: '12345',
+  // `value` is a single non-localized number; `unit` is localized {en, ar}.
   hero: {
-    years:       { value: { en: '67',    ar: '٦٧'   }, unit: { en: '+',  ar: '+'  } },
-    departments: { value: { en: '28',    ar: '٢٨'   }, unit: { en: '',   ar: ''   } },
-    patients:    { value: { en: '1.2',   ar: '١٫٢'  }, unit: { en: 'M+', ar: 'م+' } },
-    staff:       { value: { en: '2,400', ar: '٢٤٠٠' }, unit: { en: '+',  ar: '+'  } },
+    years:       { value: 67,   unit: { en: '+',  ar: '+'  } },
+    departments: { value: 28,   unit: { en: '',   ar: ''   } },
+    patients:    { value: 1.2,  unit: { en: 'M+', ar: 'م+' } },
+    staff:       { value: 2400, unit: { en: '+',  ar: '+'  } },
   },
 }
 
 // --- shared normalizer: locale=all preservation ---
 
-test('normalizeHealthcareSettings preserves locale=all {en,ar} values + the emergency number', () => {
+test('normalizeHealthcareSettings maps value→number + localized unit + the emergency number', () => {
   const vm = normalizeHealthcareSettings(rawDoc)
   assert.equal(vm.emergencyNumber, '12345')
-  assert.equal(vm.stats.years.value, '67')
-  assert.equal(vm.stats.years.valueAr, '٦٧')
-  assert.equal(vm.stats.years.unit, '+')
-  assert.equal(vm.stats.years.unitAr, '+')
-  assert.equal(vm.stats.patients.value, '1.2')
+  assert.equal(vm.stats.years.value, 67)            // non-localized number
+  assert.equal(vm.stats.years.unit, '+')            // en unit
+  assert.equal(vm.stats.years.unitAr, '+')          // ar unit
+  assert.equal(vm.stats.patients.value, 1.2)        // decimal preserved
   assert.equal(vm.stats.patients.unitAr, 'م+')
-  assert.equal(vm.stats.staff.value, '2,400')
+  assert.equal(vm.stats.staff.value, 2400)
   assert.deepEqual(Object.keys(vm.stats).sort(), ['departments', 'patients', 'staff', 'years'])
 })
 
-test('normalizeHealthcareSettings treats a plain-string localized field as English', () => {
-  const vm = normalizeHealthcareSettings({ emergencyNumber: '911', hero: { years: { value: '99' } } })
-  assert.equal(vm.stats.years.value, '99')
-  assert.equal(vm.stats.years.valueAr, '')
+test('normalizeHealthcareSettings coerces a missing/invalid value to 0', () => {
+  const vm = normalizeHealthcareSettings({ emergencyNumber: '911', hero: { years: {} } })
+  assert.equal(vm.stats.years.value, 0)
+  assert.equal(vm.stats.years.unit, '')
+})
+
+test('Intl.NumberFormat renders the number per locale (the approach the components use)', () => {
+  assert.equal(new Intl.NumberFormat('en').format(2400), '2,400')
+  assert.equal(new Intl.NumberFormat('ar-EG').format(2400), '٢٬٤٠٠')
+  assert.equal(new Intl.NumberFormat('ar-EG').format(1.2), '١٫٢')
+  assert.equal(new Intl.NumberFormat('ar-EG').format(67), '٦٧')
 })
 
 // --- shared normalizer: 0 / 1 / >1 docs ---
@@ -58,7 +65,7 @@ test('normalizeHealthcareSettingsDocs returns undefined for empty/null input', (
 test('normalizeHealthcareSettingsDocs normalizes a single doc', () => {
   const vm = normalizeHealthcareSettingsDocs([rawDoc])
   assert.equal(vm?.emergencyNumber, '12345')
-  assert.equal(vm?.stats.departments.value, '28')
+  assert.equal(vm?.stats.departments.value, 28)
 })
 
 test('normalizeHealthcareSettingsDocs throws when more than one doc is returned (uniqueness violation)', () => {
@@ -112,7 +119,7 @@ test('REST backend getHealthcareSettings fetches the tenant-scoped doc (limit 1)
     assert.match(calledUrl!, /limit=1/)
     assert.match(calledUrl!, /where\[tenant\]\[equals\]=7/)
     assert.equal(vm?.emergencyNumber, '12345')
-    assert.equal(vm?.stats.staff.valueAr, '٢٤٠٠')
+    assert.equal(vm?.stats.staff.value, 2400)
   } finally {
     globalThis.fetch = originalFetch
   }
