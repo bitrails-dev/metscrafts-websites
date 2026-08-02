@@ -1,5 +1,5 @@
 ---
-import { pickLocalized, type Locale } from '../../i18n';
+import { DATE_LOCALE_TAGS, pickLocalized, type Locale } from '../../i18n';
 import type { HealthcareSettings } from '../../cms/shared/healthcare-settings';
 
 interface Props {
@@ -12,12 +12,14 @@ interface Props {
 const { lang, strings, stats, defaultLanguage } = Astro.props;
 const fallback = defaultLanguage;
 
-// Stats come from the tenant's healthcare-settings doc (passed in by the page). No settings → no items.
+// Stats come from the tenant's healthcare-settings doc. `value` is a non-localized number, formatted
+// per locale (Arabic-Indic in ar, ASCII in en); `unit` is localized text. No settings → no items.
+const nf = new Intl.NumberFormat(DATE_LOCALE_TAGS[lang]);
 const items = stats ? [
-	{ value: pickLocalized(stats.years.value, lang, fallback),       unit: pickLocalized(stats.years.unit, lang, fallback),       label: strings.hero.stats.years       },
-	{ value: pickLocalized(stats.departments.value, lang, fallback), unit: pickLocalized(stats.departments.unit, lang, fallback), label: strings.hero.stats.departments },
-	{ value: pickLocalized(stats.patients.value, lang, fallback),    unit: pickLocalized(stats.patients.unit, lang, fallback),    label: strings.hero.stats.patients    },
-	{ value: pickLocalized(stats.staff.value, lang, fallback),       unit: pickLocalized(stats.staff.unit, lang, fallback),       label: strings.hero.stats.staff       },
+	{ value: nf.format(stats.years.value),       unit: pickLocalized(stats.years.unit, lang, fallback),       label: strings.hero.stats.years       },
+	{ value: nf.format(stats.departments.value), unit: pickLocalized(stats.departments.unit, lang, fallback), label: strings.hero.stats.departments },
+	{ value: nf.format(stats.patients.value),    unit: pickLocalized(stats.patients.unit, lang, fallback),    label: strings.hero.stats.patients    },
+	{ value: nf.format(stats.staff.value),       unit: pickLocalized(stats.staff.unit, lang, fallback),       label: strings.hero.stats.staff       },
 ] : [];
 ---
 

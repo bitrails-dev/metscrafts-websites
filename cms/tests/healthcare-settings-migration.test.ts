@@ -29,6 +29,7 @@ const MIGRATION_INDEX = migrations.findIndex((m) => m.name === MIGRATION_NAME)
 const PRIOR = migrations.slice(0, MIGRATION_INDEX)
 const TARGET = migrations[MIGRATION_INDEX]
 const TARGET_B = migrations.find((m) => m.name === '20260727_130100_drop_healthcare_fields_from_tenants')
+const TARGET_C = migrations.find((m) => m.name === '20260729_140000_hero_value_to_number')
 
 type DB = { run: (q: unknown) => Promise<{ rows: unknown[] }> }
 
@@ -132,12 +133,13 @@ test.after(async () => {
   try { rmSync(TEMP_DB, { force: true }) } catch { /* ignore */ }
 })
 
-test('migration A is registered after store_products_localization, and B is registered last', () => {
+test('migration A is registered after store_products_localization; B then C follow, C last', () => {
   assert.ok(MIGRATION_INDEX > 0)
   assert.equal(migrations[MIGRATION_INDEX - 1].name, '20260722_100300_store_products_localization')
-  assert.equal(MIGRATION_INDEX, migrations.length - 2)
   assert.ok(TARGET_B, 'migration B must be registered')
-  assert.equal(migrations[migrations.length - 1].name, '20260727_130100_drop_healthcare_fields_from_tenants')
+  assert.ok(TARGET_C, 'migration C must be registered')
+  assert.equal(migrations[MIGRATION_INDEX + 1]?.name, '20260727_130100_drop_healthcare_fields_from_tenants')
+  assert.equal(migrations[migrations.length - 1].name, '20260729_140000_hero_value_to_number')
 })
 
 // Read the ordered feature values for a tenant (by slug) or a tenant-type (by slug + flag).
@@ -323,4 +325,40 @@ test('A.up -> B.up -> B.down -> A.down preserves healthcare tenant hero+emergenc
   assert.deepEqual(await phones(), phonesBefore)
   assert.equal(await scalar<number>(sql`SELECT COUNT(*) AS v FROM \`tenants\`;`), tenantCountBefore)
   assert.equal(await scalar<number>(sql`SELECT COUNT(*) AS v FROM \`tenants_locales\`;`), localeCountBefore)
+})
+
+test('C.up moves hero value to a parent number; C.down restores the locale text', async () => {
+  if (!TARGET_C || !TARGET_B) throw new Error('migration B/C not found')
+  // Earlier tests left the DB at A.down. Re-run A + B so C has hero data to move to the parent.
+  await TARGET.up({ db: drizzle(), payload: payload, req: undefined } as never)
+  await TARGET_B.up({ db: drizzle(), payload: payload, req: undefined } as never)
+
+  // C.up: value → non-localized number on the parent; locale value columns dropped (unit kept).
+  await TARGET_C.up({ db: drizzle(), payload: payload, req: undefined } as never)
+  const hsCols = (await rows(sql`PRAGMA table_info(\`healthcare_settings\`);`)).map((c) => String(c.name))
+  assert.ok(
+    ['years', 'departments', 'patients', 'staff'].every((s) => hsCols.includes(`hero_${s}_value`)),
+    'parent must carry the 4 numeric value columns',
+  )
+  const locCols = (await rows(sql`PRAGMA table_info(\`healthcare_settings_locales\`);`)).map((c) => String(c.name))
+  assert.equal(locCols.some((c) => c.endsWith('_value')), false, 'locale value columns must be dropped')
+  assert.ok(locCols.includes('hero_years_unit'), 'locale unit columns must remain')
+
+  // Parent numbers parsed from the ar locale (seed: 67 / 28 / 1.2 / 2400).
+  const v = await rows(sql`SELECT \`hero_years_value\` AS y, \`hero_departments_value\` AS d, \`hero_patients_value\` AS p, \`hero_staff_value\` AS s FROM \`healthcare_settings\` hs JOIN \`tenants\` t ON t.id = hs.tenant_id WHERE t.slug = 'hosp';`)
+  assert.equal(v[0]?.y, 67)
+  assert.equal(v[0]?.d, 28)
+  assert.equal(v[0]?.p, 1.2)
+  assert.equal(v[0]?.s, 2400)
+
+  // C.down: restore the locale value text; drop the parent numeric columns.
+  await TARGET_C.down({ db: drizzle(), payload: payload, req: undefined } as never)
+  const hsColsAfter = (await rows(sql`PRAGMA table_info(\`healthcare_settings\`);`)).map((c) => String(c.name))
+  assert.equal(hsColsAfter.some((c) => c.endsWith('_value')), false, 'parent numeric columns must be dropped')
+  const locColsAfter = (await rows(sql`PRAGMA table_info(\`healthcare_settings_locales\`);`)).map((c) => String(c.name))
+  assert.ok(locColsAfter.includes('hero_years_value'), 'locale value column must be restored')
+
+  // Leave the DB at the pre-A state.
+  await TARGET_B.down({ db: drizzle(), payload: payload, req: undefined } as never)
+  await TARGET.down({ db: drizzle(), payload: payload, req: undefined } as never)
 })

@@ -72,6 +72,15 @@ export const isContentPath = (p: string): boolean =>
   !NON_CONTENT_EXACT.has(p) &&
   !NON_CONTENT_PREFIXES.some((pre) => p === pre || p.startsWith(pre + "/"));
 
+// Reject locale-shaped prefixes that are not in the platform catalogue. Without this guard,
+// Astro's `[...lang]` routes accept values such as `fr/about`; redirecting that path to a tenant
+// default produces `/es/fr/about`, which the catch-all route then renders as a duplicate page.
+export const hasUnknownLocalePrefix = (path: string): boolean => {
+  if (!isContentPath(path)) return false;
+  const segment = path.split("/")[1];
+  return /^[a-z]{2}$/i.test(segment) && !LOCALES.includes(segment.toLowerCase() as Locale);
+};
+
 // Locale enforcement (§2.7). When a tenant carries a non-empty languages set, any content
 // path whose requested locale is outside that set redirects to the tenant default locale.
 // `search` is appended verbatim so querystrings survive the redirect (BLK-4). The default

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { LOCALES, UNPREFIXED_LOCALE, type Locale } from '../src/i18n/index'
-import { computeLocaleRedirect } from '../src/lib/feature-routes'
+import { computeLocaleRedirect, hasUnknownLocalePrefix } from '../src/lib/feature-routes'
 
 // Destructure positions, not literal codes. LOCALES[0] is the unprefixed default by invariant.
 const AR = LOCALES[0] // unprefixed default locale
@@ -106,4 +106,13 @@ test('non-content paths never trigger a redirect (admin/api/static/assets/upload
 test('an empty language set never redirects', () => {
   const dest = computeLocaleRedirect(`/${FIRST_PREFIXED}/departments`, '', [] as Locale[], AR)
   assert.equal(dest, null)
+})
+
+test('unknown locale-shaped prefixes are rejected before tenant redirect handling', () => {
+  assert.equal(hasUnknownLocalePrefix('/fr/about'), true)
+  assert.equal(hasUnknownLocalePrefix('/FR/about'), true)
+  assert.equal(hasUnknownLocalePrefix('/fr'), true)
+  assert.equal(hasUnknownLocalePrefix(`/${FIRST_PREFIXED}/about`), false)
+  assert.equal(hasUnknownLocalePrefix('/about'), false)
+  assert.equal(hasUnknownLocalePrefix('/api/fr/about'), false)
 })

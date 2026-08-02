@@ -35,10 +35,10 @@ const DAMIETTA_GENERAL_HOSPITAL = {
       { day: 'الجمعة', time: '9:00 ص - 6:00 م' },
     ],
     hero: {
-      years: { value: '٦٧', unit: '+' },
-      departments: { value: '٢٨', unit: '' },
-      patients: { value: '١٫٢', unit: 'م+' },
-      staff: { value: '٢٤٠٠', unit: '+' },
+      years: { value: 67, unit: '+' },
+      departments: { value: 28, unit: '' },
+      patients: { value: 1.2, unit: 'م+' },
+      staff: { value: 2400, unit: '+' },
     },
   },
   en: {
@@ -50,11 +50,12 @@ const DAMIETTA_GENERAL_HOSPITAL = {
       { day: 'Saturday - Thursday', time: '8:00 AM - 9:00 PM' },
       { day: 'Friday', time: '9:00 AM - 6:00 PM' },
     ],
+    // value is a non-localized number (same figure); only units differ per locale.
     hero: {
-      years: { value: '67', unit: '+' },
-      departments: { value: '28', unit: '' },
-      patients: { value: '1.2', unit: 'M+' },
-      staff: { value: '2,400', unit: '+' },
+      years: { value: 67, unit: '+' },
+      departments: { value: 28, unit: '' },
+      patients: { value: 1.2, unit: 'M+' },
+      staff: { value: 2400, unit: '+' },
     },
   },
 }

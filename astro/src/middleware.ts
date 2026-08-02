@@ -4,6 +4,7 @@ import { getHealthcareSettings } from "./cms";
 import {
   FEATURE_ROUTES,
   computeLocaleRedirect,
+  hasUnknownLocalePrefix,
 } from "./lib/feature-routes";
 import type { Locale } from "./i18n";
 
@@ -105,6 +106,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Path used by both locale enforcement and feature gating. Hoisted above the locale
   // block (RC-2/TS2448) — the old lower declaration was removed when this block was inserted.
   const path = context.url.pathname;
+
+  // `[...lang]` accepts arbitrary multi-segment values. Fail closed for locale-shaped prefixes
+  // outside the platform catalogue so they cannot become duplicate localized pages.
+  if (hasUnknownLocalePrefix(path)) {
+    return new Response("Not Found", {
+      status: 404,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
 
   // Locale enforcement — runs IMMEDIATELY AFTER the tenant assign and BEFORE the
   // vertical-settings healthcare-settings fetch + the feature gate (do NOT reorder the

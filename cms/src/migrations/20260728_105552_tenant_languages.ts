@@ -16,11 +16,11 @@ export async function backfillTenantLanguages(db: MigrateUpArgs['db']): Promise<
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(sql`CREATE TABLE \`tenants_languages\` (
-  	\`order\` integer NOT NULL,
-  	\`parent_id\` integer NOT NULL,
-  	\`value\` text,
-  	\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  	FOREIGN KEY (\`parent_id\`) REFERENCES \`tenants\`(\`id\`) ON UPDATE no action ON DELETE cascade
+    \`order\` integer NOT NULL,
+    \`parent_id\` integer NOT NULL,
+    \`value\` text,
+    \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    FOREIGN KEY (\`parent_id\`) REFERENCES \`tenants\`(\`id\`) ON UPDATE no action ON DELETE cascade
   );
   `)
   await db.run(sql`CREATE INDEX \`tenants_languages_order_idx\` ON \`tenants_languages\` (\`order\`);`)

@@ -1,7 +1,8 @@
 // Shared view-model + normalizer for the tenant-scoped `healthcare-settings` collection. Both CMS
 // backends (REST + in-process) fetch raw docs and route them through here, so public-site components
-// see one stable shape: four named hero stats (each a localized {value, unit} map pair) and an
-// emergency number. Raw Payload documents are never exposed to components.
+// see one stable shape: four named hero stats (a non-localized numeric `value` + a localized `unit`)
+// and an emergency number. Raw Payload documents are never exposed to components. The numeric value is
+// formatted per language by the components (Intl.NumberFormat), so it is stored once, not per locale.
 //
 // At most one healthcare-settings document exists per tenant (UNIQUE(tenant_id) + singlePerTenant
 // hook). normalizeDocs returns undefined for zero rows and throws for more than one — a uniqueness
@@ -10,7 +11,7 @@
 import { toLocalizedMap } from "../../i18n";
 
 export interface LocalizedStat {
-  value: Record<string, string>;
+  value: number;
   unit: Record<string, string>;
 }
 
@@ -27,8 +28,9 @@ export interface HealthcareSettings {
 // A localized field comes back as { en, ar, … } under locale=all&fallback-locale=none; a plain
 // string is treated as a single-locale value. toLocalizedMap filters empties and returns the map.
 function stat(group: any): LocalizedStat {
+  const n = Number(group?.value);
   return {
-    value: toLocalizedMap(group?.value),
+    value: Number.isFinite(n) ? n : 0,
     unit: toLocalizedMap(group?.unit),
   };
 }

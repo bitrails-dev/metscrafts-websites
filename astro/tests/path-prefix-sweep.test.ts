@@ -1,14 +1,17 @@
 // T13 — §2.4 locale-invariant sweep gate (§9). Drives the sanctioned invariant script and
-// asserts each of the four §2.4 `rg` textual gates is empty. NO Vitest: node:test + tsx runtime.
+// asserts each of the four §2.4 textual gates is empty. NO Vitest: node:test + tsx runtime.
 //
 // The invariant script (scripts/check-locale-invariants.ts) is the oracle; this test execs it
-// via tsx and additionally re-asserts the four §2.4 mandatory rg patterns independently, so a
+// via tsx and additionally re-asserts the four §2.4 mandatory patterns independently, so a
 // regression on either layer (script logic or one of the gated raw patterns) is caught.
 //
 // Run via `pnpm --filter @bitrails-works/astro exec tsx --test tests/path-prefix-sweep.test.ts`
-// (or as part of `test:locales`): pnpm puts both `tsx` and `rg` on PATH via node_modules/.bin.
+// (or as part of `test:locales`).
 import assert from 'node:assert/strict'
-import { execFileSync, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
+import { readdirSync, readFileSync } from 'node:fs'
+import { extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
 // All paths resolve from this test file's URL so the test is cwd-independent.
@@ -19,22 +22,27 @@ const scriptPath = new URL('scripts/check-locale-invariants.ts', astroRoot)
 // Convert a file:// URL to a path Node spawn accepts on the current OS. On Windows, URL.pathname
 // starts with a leading `/` before the drive letter (`/C:/...`) which Node rejects; strip it.
 function toOsPath(url: URL): string {
-  return url.pathname.replace(/^\//, '')
+  return fileURLToPath(url)
 }
 
-// execFileSync bypasses the shell, so patterns are passed to rg verbatim — no shell escaping
-// can mangle them. rg returns exit 1 when there are no matches, which we coerce to "".
-function runRg(pattern: string, extraArgs: string[]): string {
-  try {
-    return execFileSync('rg', ['-n', '--pcre2', pattern, toOsPath(srcDir), ...extraArgs], {
-      encoding: 'utf8',
-      maxBuffer: 20 * 1024 * 1024,
-    }).trim()
-  } catch (err: any) {
-    // rg exit 1 = no matches (the success case for these gates).
-    if (err.status === 1) return ''
-    throw err
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name)
+    return entry.isDirectory() ? sourceFiles(path) : [path]
+  })
+}
+
+// Keep this gate self-contained and cross-platform. Requiring a globally installed `rg` made the
+// project test suite fail on otherwise valid Node/pnpm environments.
+function runPattern(pattern: RegExp, extensions: readonly string[]): string {
+  const matches: string[] = []
+  for (const file of sourceFiles(toOsPath(srcDir))) {
+    if (!extensions.includes(extname(file))) continue
+    readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, index) => {
+      if (pattern.test(line)) matches.push(`${file}:${index + 1}:${line.trim()}`)
+    })
   }
+  return matches.join('\n')
 }
 
 test('the §2.4 invariant script exits 0 and emits no findings', () => {
@@ -55,24 +63,24 @@ test('the §2.4 invariant script exits 0 and emits no findings', () => {
 
 test('§2.4 gate (a-paired): no two-locale string union anywhere in src', () => {
   // rg -n --pcre2 "['\"]ar['\"]\s*\|\s*['\"]en['\"]" astro/src --glob "*.{ts,astro,vue}"
-  const out = runRg("['\"]ar['\"]\\s*\\|\\s*['\"]en['\"]", ['--glob', '*.{ts,astro,vue}'])
+  const out = runPattern(/['"]ar['"]\s*\|\s*['"]en['"]/, ['.ts', '.astro', '.vue'])
   assert.equal(out, '', `two-locale unions must be gone; found:\n${out}`)
 })
 
 test('§2.4 gate (c-params): no non-canonical Astro.params.lang equality/coalesce in .astro', () => {
   // rg -n "Astro\.params\.lang\s*(===|\|\|)" astro/src --glob "*.astro"
-  const out = runRg('Astro\\.params\\.lang\\s*(===|\\|\\|)', ['--glob', '*.astro'])
+  const out = runPattern(/Astro\.params\.lang\s*(===|\|\|)/, ['.astro'])
   assert.equal(out, '', `non-canonical Astro.params.lang must be gone; found:\n${out}`)
 })
 
 test('§2.4 gate (d-prefix): no hardcoded /en locale prefix in src', () => {
   // rg -n --pcre2 '/en(?:\$\{|/|["\x27\x60]|$)' astro/src --glob "*.{ts,astro,vue}"
-  const out = runRg('/en(?:\\$\\{|/|["\x27`]|$)', ['--glob', '*.{ts,astro,vue}'])
+  const out = runPattern(/\/en(?:\$\{|\/|["'`]|$)/, ['.ts', '.astro', '.vue'])
   assert.equal(out, '', `hardcoded /en prefixes must be gone; found:\n${out}`)
 })
 
 test('§2.4 gate (e-toggle): no binary toggleToAr/toggleToEn keys anywhere', () => {
   // rg -n "toggleTo(Ar|En)" astro/src astro/src/i18n --glob "*.{ts,astro,vue,json}"
-  const out = runRg('toggleTo(Ar|En)', ['--glob', '*.{ts,astro,vue,json}'])
+  const out = runPattern(/toggleTo(Ar|En)/, ['.ts', '.astro', '.vue', '.json'])
   assert.equal(out, '', `binary toggle keys must be gone; found:\n${out}`)
 })

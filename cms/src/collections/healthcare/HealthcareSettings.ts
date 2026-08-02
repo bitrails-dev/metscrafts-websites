@@ -12,14 +12,15 @@ import { singlePerTenant } from '../utils/singlePerTenant'
 //
 // The `tenant` relationship is injected by multiTenantPlugin (do not declare it here).
 
-// Mirrors the Tenants hero `stat` factory. Kept here until Phase 5 removes the legacy hero group from
-// Tenants; this collection then becomes the sole owner.
+// `value` is a single non-localized NUMBER — the same figure in every locale; the public site formats
+// it per language (Arabic-Indic digits in ar, ASCII in en) via Intl.NumberFormat. Only `unit`
+// translates, so it stays localized text. Authors edit one number per stat, not one per locale.
 const stat = (name: string, ar: string, en: string) => ({
   name,
   type: 'group' as const,
   label: { ar, en },
   fields: [
-    { name: 'value', type: 'text' as const, localized: true, required: true,
+    { name: 'value', type: 'number' as const, required: true,
       label: { ar: 'القيمة', en: 'Value' } },
     { name: 'unit', type: 'text' as const, localized: true,
       label: { ar: 'الوحدة', en: 'Unit' } },

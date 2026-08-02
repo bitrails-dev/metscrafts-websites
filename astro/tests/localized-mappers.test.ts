@@ -139,22 +139,22 @@ test('blocks.ts richText block pre-renders Lexical HTML per catalogue locale int
   }
 })
 
-// --- healthcare-settings.ts emits locale maps ---
+// --- healthcare-settings.ts keeps numeric values + emits locale maps for units ---
 
-test('healthcare-settings.ts stat emits value/unit maps and drops valueAr/unitAr', () => {
+test('healthcare-settings.ts stat emits numeric values/unit maps and drops valueAr/unitAr', () => {
   const vm = normalizeHealthcareSettings({
     emergencyNumber: '123',
     hero: {
       years: {
-        value: localizedField(['1', '2', '3']),
+        value: 3,
         unit: localizedField(['u1', 'u2', 'u3']),
       },
     },
   })
   const years = vm.stats.years as any
-  assert.equal(typeof years.value, 'object')
+  assert.equal(years.value, 3)
   assert.equal(typeof years.unit, 'object')
   assert.equal(years.valueAr, undefined)
   assert.equal(years.unitAr, undefined)
-  assert.equal(years.value[third], '3')
+  assert.equal(years.unit[third], 'u3')
 })
