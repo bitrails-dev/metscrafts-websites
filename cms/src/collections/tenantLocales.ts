@@ -1,28 +1,41 @@
-// Code-defined locale catalogue. Backs Payload localization.locales + i18n.supportedLanguages AND
-// the frontend LOCALES (astro/src/i18n/index.ts). Keep in sync — asserted by T1.
-// Adding a locale = APPEND one row here + config entries (§1.2) + frontend `xx.json`. Never reorder
-// the first row: it is the platform/unprefixed default. No other code.
+// Compatibility facade for collection/access consumers. The canonical metadata now lives in
+// ../i18n/catalogue so Payload and Astro cannot drift as locales are added.
+import {
+  DEFAULT_PLATFORM_LOCALE,
+  FALLBACK_PLATFORM_LANGUAGES,
+  LOCALE_CATALOGUE,
+  PLATFORM_LOCALE_CODES,
+  RTL_PLATFORM_LOCALES,
+  type PlatformLocale,
+} from '../i18n/catalogue'
 
-export const PLATFORM_LOCALES = [
-  { value: 'ar', native: 'العربية', unresolvedFallback: true,  rtl: true,  label: { ar: 'العربية',   en: 'Arabic' },  tenantFieldLabels: { languages: 'اللغات', defaultLanguage: 'اللغة الافتراضية' } },
-  { value: 'en', native: 'English', unresolvedFallback: true,  rtl: false, label: { ar: 'الإنجليزية', en: 'English' }, tenantFieldLabels: { languages: 'Languages', defaultLanguage: 'Default language' } },
-  { value: 'es', native: 'Español', unresolvedFallback: false, rtl: false, label: { ar: 'الإسبانية',  en: 'Spanish' }, tenantFieldLabels: { languages: 'Idiomas', defaultLanguage: 'Idioma predeterminado' } },
-] as const
+export {
+  DEFAULT_PLATFORM_LOCALE,
+  FALLBACK_PLATFORM_LANGUAGES,
+  PLATFORM_LOCALE_CODES,
+  RTL_PLATFORM_LOCALES,
+  type PlatformLocale,
+}
 
-export type PlatformLocale = (typeof PLATFORM_LOCALES)[number]['value']
-export const PLATFORM_LOCALE_CODES = PLATFORM_LOCALES.map((l) => l.value) as PlatformLocale[]
-export const PLATFORM_LOCALE_OPTIONS = PLATFORM_LOCALES.map(({ value, label }) => ({ value, label }))
-export const DEFAULT_PLATFORM_LOCALE: PlatformLocale = PLATFORM_LOCALES[0].value
-export const FALLBACK_PLATFORM_LANGUAGES = PLATFORM_LOCALES.filter((l) => l.unresolvedFallback).map((l) => l.value) as PlatformLocale[]
-export const RTL_PLATFORM_LOCALES: ReadonlySet<PlatformLocale> = new Set(PLATFORM_LOCALES.filter((l) => l.rtl).map((l) => l.value))
+export const PLATFORM_LOCALES = LOCALE_CATALOGUE.map((locale) => ({
+  value: locale.code,
+  native: locale.nativeName,
+  unresolvedFallback: locale.unresolvedFallback,
+  rtl: locale.direction === 'rtl',
+  label: locale.adminLabel,
+  tenantFieldLabels: locale.tenantFieldLabels,
+}))
+
+export const PLATFORM_LOCALE_OPTIONS = LOCALE_CATALOGUE.map((locale) => ({
+  value: locale.code,
+  label: locale.adminLabel,
+}))
+
 export const TENANT_LANGUAGE_FIELD_LABELS = {
-  languages: Object.fromEntries(PLATFORM_LOCALES.map((l) => [l.value, l.tenantFieldLabels.languages])),
-  defaultLanguage: Object.fromEntries(PLATFORM_LOCALES.map((l) => [l.value, l.tenantFieldLabels.defaultLanguage])),
-}
-
-if (PLATFORM_LOCALE_CODES.some((code) => !/^[a-z]{2}$/.test(code))) {
-  throw new Error('Platform locale codes must be lowercase two-letter ISO-639-1 codes.')
-}
-if (!FALLBACK_PLATFORM_LANGUAGES.includes(DEFAULT_PLATFORM_LOCALE)) {
-  throw new Error('The unresolved fallback set must include the platform default locale.')
+  languages: Object.fromEntries(
+    LOCALE_CATALOGUE.map((locale) => [locale.code, locale.tenantFieldLabels.languages]),
+  ),
+  defaultLanguage: Object.fromEntries(
+    LOCALE_CATALOGUE.map((locale) => [locale.code, locale.tenantFieldLabels.defaultLanguage]),
+  ),
 }

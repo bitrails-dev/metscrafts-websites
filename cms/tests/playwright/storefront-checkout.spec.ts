@@ -43,7 +43,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
-// Localized strings lifted verbatim from src/i18n/{ar,en}.json — these are the exact labels
+// Localized strings lifted verbatim from src/i18n/messages/{ar,en}.json — these are the exact labels
 // the operator-facing UI renders, so the role-based selectors stay faithful to what a real
 // shopper sees. If the i18n keys change, update both locales together.
 interface LocaleVariant {

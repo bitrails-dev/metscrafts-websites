@@ -1,46 +1,18 @@
-import ar from "./ar.json";
-import en from "./en.json";
-import es from "./es.json";
+import { messages } from "./messages";
+import {
+  DEFAULT_LOCALE,
+  FALLBACK_LANGUAGES,
+  LOCALES,
+  RTL_LOCALES,
+  UNPREFIXED_LOCALE,
+  type Locale,
+} from "./catalogue";
 
-// One logical locale catalogue. APPEND new rows. Never reorder the first row:
-// it is the unprefixed routing default. Routing/SEO/date metadata lives here,
-// never in consumers. Adding a locale = one row here + config entries (§1.2)
-// + a `xx.json` with full key parity. Asserted by T1 (parity with the CMS
-// PLATFORM_LOCALE_CODES) and T6 (xx.json key parity).
-export const LOCALE_CATALOGUE = [
-  { code: "ar", rtl: true,  unresolvedFallback: true,  og: "ar_EG", href: "ar-EG", date: "ar-EG" },
-  { code: "en", rtl: false, unresolvedFallback: true,  og: "en_US", href: "en-US", date: "en-US" },
-  { code: "es", rtl: false, unresolvedFallback: false, og: "es_ES", href: "es-ES", date: "es-ES" },
-] as const;
-
-export type Locale = (typeof LOCALE_CATALOGUE)[number]["code"];
-export const LOCALES = LOCALE_CATALOGUE.map((row) => row.code) as Locale[];
-export const DEFAULT_LOCALE: Locale = LOCALE_CATALOGUE[0].code;
-export const UNPREFIXED_LOCALE: Locale = DEFAULT_LOCALE;
-export const FALLBACK_LANGUAGES: Locale[] = LOCALE_CATALOGUE
-  .filter((row) => row.unresolvedFallback)
-  .map((row) => row.code);
-export const RTL_LOCALES: ReadonlySet<Locale> = new Set(
-  LOCALE_CATALOGUE.filter((row) => row.rtl).map((row) => row.code),
-);
-export const OG_LOCALE_TAGS = Object.fromEntries(
-  LOCALE_CATALOGUE.map((row) => [row.code, row.og]),
-) as Record<Locale, string>;
-export const HREFLANG_TAGS = Object.fromEntries(
-  LOCALE_CATALOGUE.map((row) => [row.code, row.href]),
-) as Record<Locale, string>;
-export const DATE_LOCALE_TAGS = Object.fromEntries(
-  LOCALE_CATALOGUE.map((row) => [row.code, row.date]),
-) as Record<Locale, string>;
-
-if (LOCALES.some((code) => !/^[a-z]{2}$/.test(code)))
-  throw new Error("Locale codes must be lowercase two-letter ISO-639-1 codes.");
-if (!FALLBACK_LANGUAGES.includes(DEFAULT_LOCALE))
-  throw new Error("The unresolved fallback set must include the default locale.");
+export * from "./catalogue";
 
 // The import above + this one registration entry are the one sanctioned config
 // edit when adding a locale.
-const strings: Record<Locale, any> = { ar, en, es };
+const strings: Record<Locale, any> = messages;
 export const getStrings = (lang: Locale) => strings[lang];
 export const isRTL = (lang: Locale) => RTL_LOCALES.has(lang);
 

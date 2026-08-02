@@ -1,4 +1,4 @@
-// T6 — every astro/src/i18n/<locale>.json has the same key tree as en.json (§9 of the per-tenant-languages plan).
+// T6 — every astro/src/i18n/messages/<locale>.json has the same key tree as en.json (§9).
 // The set of `<locale>.json` basenames must equal `LOCALES`, so a missing `xx.json` fails loudly.
 import assert from 'node:assert/strict'
 import test from 'node:test'
@@ -9,14 +9,14 @@ import { dirname, resolve } from 'node:path'
 import { LOCALES } from '../src/i18n/index'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const i18nDir = resolve(here, '..', 'src', 'i18n')
+const messagesDir = resolve(here, '..', 'src', 'i18n', 'messages')
 
-const jsonFiles = readdirSync(i18nDir)
+const jsonFiles = readdirSync(messagesDir)
   .filter((name) => name.endsWith('.json'))
   .map((name) => name.slice(0, -'.json'.length))
 
 const load = (locale: string): unknown =>
-  JSON.parse(readFileSync(resolve(i18nDir, `${locale}.json`), 'utf8'))
+  JSON.parse(readFileSync(resolve(messagesDir, `${locale}.json`), 'utf8'))
 
 // Deep key tree of a locale file — `a.b.c` for every leaf path.
 const keyTree = (node: unknown, prefix = ''): string[] => {

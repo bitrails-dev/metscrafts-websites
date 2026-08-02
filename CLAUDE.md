@@ -20,7 +20,7 @@ Public-facing website for **Dumyat Public Hospital** (مستشفى دمياط ا
 
 - Astro i18n: `defaultLocale: "ar"`, `locales: ["ar","en"]`, `prefixDefaultLocale: false` → Arabic at `/`, English at `/en`.
 - All routes live under `src/pages/[...lang]/`. Pages read `Astro.params.lang` (`"en"` or default `"ar"`) and set `dir="rtl|ltr"` + font class.
-- UI strings: `src/i18n/{index.ts,ar.json,en.json}` with a typed `t(lang, key)` helper and `localePath()`. Content is also localized (each entry carries `…` + `…Ar` fields).
+- Locale metadata: the shared code-defined catalogue exported by `cms/src/i18n/catalogue.ts`; tenant records select an enabled subset. UI messages live in `astro/src/i18n/messages/<locale>.json`, exposed through the typed `t(lang, key)` helper and `localePath()`.
 
 ## Content layer (live from Payload)
 

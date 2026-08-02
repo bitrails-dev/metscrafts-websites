@@ -5,10 +5,8 @@ import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { ecommercePlugin, defaultCartItemMatcher } from '@payloadcms/plugin-ecommerce'
-import { en } from '@payloadcms/translations/languages/en'
-import { ar } from '@payloadcms/translations/languages/ar'
-import { es } from '@payloadcms/translations/languages/es'
 import { PLATFORM_LOCALES, DEFAULT_PLATFORM_LOCALE } from './collections/tenantLocales'
+import { ADMIN_TRANSLATIONS } from './i18n/admin'
 
 import { Users } from './collections/Users'
 import { Doctors } from './collections/Doctors'
@@ -192,7 +190,7 @@ export default buildConfig({
   },
   editor: lexicalEditor(),
   i18n: {
-    supportedLanguages: { ar, en, es },
+    supportedLanguages: ADMIN_TRANSLATIONS,
     fallbackLanguage: DEFAULT_PLATFORM_LOCALE,
   },
   localization: {
