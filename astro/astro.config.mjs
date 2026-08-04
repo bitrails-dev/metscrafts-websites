@@ -36,6 +36,7 @@ export default defineConfig({
     },
     server: {
       hmr: { protocol: "ws" },
+      allowedHosts: true,
     },
   },
   integrations: [
