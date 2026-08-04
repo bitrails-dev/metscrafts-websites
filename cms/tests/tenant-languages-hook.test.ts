@@ -79,12 +79,11 @@ test('T2: create with an invalid locale code is rejected with 400', () => {
   )
 })
 
-test('T2: create with a duplicate locale code is rejected with 400', () => {
+test('T2: create with duplicate locale codes is normalized idempotently', () => {
   const duplicate = [DEFAULT_PLATFORM_LOCALE, DEFAULT_PLATFORM_LOCALE]
-  expect400(
-    () => runHook({ data: { languages: duplicate }, operation: 'create' }),
-    /Duplicate locale code/,
-  )
+  const data: Record<string, unknown> = { languages: duplicate }
+  runHook({ data, operation: 'create' })
+  assert.deepEqual(data.languages, [DEFAULT_PLATFORM_LOCALE])
 })
 
 test('T2: create with an empty languages array is rejected with 400', () => {

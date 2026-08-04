@@ -82,7 +82,25 @@ test('a super-admin create leaves commercePermissions unset (reader grants ALL a
     actor: superAdmin,
     data: { roles: ['super-admin'] },
   })
-  assert.equal(data.tenants, undefined)
+  assert.deepEqual(data.tenants, [])
+})
+
+test('a super-admin cannot be created with a tenant assignment', async () => {
+  const data = await runHook({
+    actor: superAdmin,
+    data: { roles: ['super-admin'], tenants: [{ tenant: 7 }] },
+  })
+  assert.deepEqual(data.tenants, [])
+})
+
+test('elevating a tenant user to super-admin clears existing tenant assignments', async () => {
+  const data = await runHook({
+    actor: superAdmin,
+    operation: 'update',
+    originalDoc: { id: 20, roles: ['admin'], tenants: [{ tenant: 7 }] },
+    data: { roles: ['super-admin'] },
+  })
+  assert.deepEqual(data.tenants, [])
 })
 
 test('a tenant-admin auto-assign path (no data.tenants) stamps the default on the synthesized row', async () => {

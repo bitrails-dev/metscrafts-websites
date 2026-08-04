@@ -43,7 +43,9 @@ export const validateTenantLanguages: CollectionBeforeChangeHook = ({ data, oper
       if (!PLATFORM_LOCALE_CODES.includes(code as PlatformLocale))
         throw new APIError(`Unknown locale code: ${String(code)}.`, 400, null, true)
       const c = code as PlatformLocale
-      if (seen.has(c)) throw new APIError(`Duplicate locale code: ${c}.`, 400, null, true)
+      // A localized admin form can submit the same select value more than once while switching
+      // locale tabs. Treat that as an idempotent submission instead of taking down the request.
+      if (seen.has(c)) continue
       seen.add(c); cleaned.push(c)
     }
     if (cleaned.length === 0) throw new APIError('languages cannot be empty.', 400, null, true)
@@ -218,7 +220,10 @@ const tenantFields: Field[] = [
     // NO defaultValue — Payload would pre-apply the platform default on create and defeat the derive branch (BLK-5).
     label: TENANT_LANGUAGE_FIELD_LABELS.defaultLanguage,
     access: { update: superAdminFieldAccess },
-    admin: { description: 'Fallback locale for missing translations; target of the `/` redirect when it differs from the unprefixed locale.' },
+    admin: {
+      components: { Field: '/src/admin/TenantDefaultLanguageField#default' },
+      description: 'Fallback locale for missing translations; target of the `/` redirect when it differs from the unprefixed locale.',
+    },
   },
   // Which tenant setting groups a non-super admin may edit for this tenant. Separate from
   // `features` (public/content modules) — governs only editable tenant settings. Defaults to all

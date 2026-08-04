@@ -1,4 +1,5 @@
 import { default as default_1e18f0a27adaaaa2b38cd0539a48a6a4 } from '../../../../src/admin/ApplyTypeTemplate'
+import { default as default_ff6cb6d79efa010562c1d7faaf093f80 } from '../../../../src/admin/TenantDefaultLanguageField'
 import { default as default_a73e2fdf9a4791b27024184de18ac534 } from '../../../../src/admin/ResetTenantFeatures'
 import { default as default_e99d0aed9dfc890bd50df9ea9a4ebf2f } from '../../../../src/admin/SocialConnectionsPanel'
 import { WatchTenantCollection as WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
@@ -37,11 +38,13 @@ import { default as default_eaaa06110d67e94b11812e344977323b } from '../../../..
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { default as default_1615d210c2544c5b192ded1d1e07144f } from '../../../../src/admin/InlineCreateDismissalProvider'
 import { TenantSelectionProvider as TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
+import { default as default_16e8e96ba5b435b49927e37623de1c35 } from '../../../../src/admin/TenantLocaleGuard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
   "/src/admin/ApplyTypeTemplate#default": default_1e18f0a27adaaaa2b38cd0539a48a6a4,
+  "/src/admin/TenantDefaultLanguageField#default": default_ff6cb6d79efa010562c1d7faaf093f80,
   "/src/admin/ResetTenantFeatures#default": default_a73e2fdf9a4791b27024184de18ac534,
   "/src/admin/SocialConnectionsPanel#default": default_e99d0aed9dfc890bd50df9ea9a4ebf2f,
   "@payloadcms/plugin-multi-tenant/client#WatchTenantCollection": WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a,
@@ -80,5 +83,6 @@ export const importMap = {
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
   "/src/admin/InlineCreateDismissalProvider#default": default_1615d210c2544c5b192ded1d1e07144f,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelectionProvider": TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62,
+  "/src/admin/TenantLocaleGuard#default": default_16e8e96ba5b435b49927e37623de1c35,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

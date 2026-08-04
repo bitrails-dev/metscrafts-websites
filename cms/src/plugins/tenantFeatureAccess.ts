@@ -256,6 +256,28 @@ const enforceSelectedTenant = (policy: FeaturePolicy): CollectionBeforeChangeHoo
 }
 
 export const tenantFeatureAccessPlugin = (): Plugin => (incomingConfig: Config): Config => {
+  incomingConfig.admin?.components?.providers?.push({
+    path: '/src/admin/TenantLocaleGuard#default',
+  })
+
+  // Super-admins are platform users, not tenant users. They select a tenant from the admin
+  // tenant switcher while editing, so exposing the Users.tenants assignment field would create a
+  // misleading persisted relationship (and could make a super-admin look tenant-scoped).
+  const usersCollection = incomingConfig.collections?.find((candidate) => candidate.slug === 'users')
+  const userTenantsField = usersCollection?.fields?.find(
+    (field) => 'name' in field && field.name === 'tenants',
+  )
+  if (userTenantsField) {
+    const configurableField = userTenantsField as typeof userTenantsField & {
+      admin?: Record<string, unknown>
+    }
+    configurableField.admin = {
+      ...(configurableField.admin ?? {}),
+      condition: (data) => !Array.isArray((data as { roles?: unknown })?.roles)
+        || !(data as { roles: unknown[] }).roles.includes('super-admin'),
+    }
+  }
+
   for (const [slug, policy] of Object.entries(TENANT_COLLECTION_FEATURES)) {
     const collection = incomingConfig.collections?.find((candidate) => candidate.slug === slug)
     if (!collection) continue

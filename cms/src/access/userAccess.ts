@@ -124,7 +124,15 @@ export const enforceUserScope: CollectionBeforeChangeHook = async ({
     .filter((id): id is string => Boolean(id))
 
   if (isSuperAdmin(actor)) {
-    if (!requestedRoles.includes('super-admin') && requestedTenantIDs.length === 0) {
+    if (requestedRoles.includes('super-admin')) {
+      // A super-admin has platform-wide access and must not carry tenant assignments. Clear the
+      // field on both create and update so a crafted API request cannot create a tenant-scoped
+      // super-admin, and role elevation also removes any previous assignments.
+      data.tenants = []
+      normalizeTenantCommercePermissions(data, requestedRoles)
+      return data
+    }
+    if (requestedTenantIDs.length === 0) {
       forbidden('Tenant admins and editors must be assigned to at least one tenant.')
     }
     normalizeTenantCommercePermissions(data, requestedRoles)
