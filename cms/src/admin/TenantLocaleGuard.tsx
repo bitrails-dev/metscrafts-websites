@@ -34,7 +34,7 @@ const hideUnsupportedLocaleControls = (allowed: Set<string>): void => {
   })
 }
 
-export default function TenantLocaleGuard(): null {
+export default function TenantLocaleGuard({ children }: { children?: React.ReactNode }) {
   const { config } = useConfig()
   const { selectedTenantID } = useTenantSelection()
   const router = useRouter()
@@ -83,5 +83,5 @@ export default function TenantLocaleGuard(): null {
     router.replace(`?${params.toString()}`)
   }, [allowedLocales, router, searchParams])
 
-  return null
+  return <>{children}</>
 }
