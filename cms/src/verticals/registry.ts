@@ -20,9 +20,12 @@ export const VERTICAL_SETTINGS = [
   { config: HealthcareSettings, feature: 'healthcare' },
 ] as const satisfies readonly VerticalSettingsEntry[]
 
-// slug → {} map for multiTenantPlugin's `collections` option (which keys tenant-owned collections by slug).
+// slug → tenant-global map for multiTenantPlugin's `collections` option. `isGlobal` is Payload's
+// multi-tenant singleton mode: opening the collection resolves the selected tenant's one document
+// and redirects straight to edit (or the create form when it does not exist). This is the right
+// UX for settings, which are never a list of records from a tenant user's perspective.
 export const verticalSettingsCollections = Object.fromEntries(
-  VERTICAL_SETTINGS.map(({ config }) => [config.slug, {}]),
+  VERTICAL_SETTINGS.map(({ config }) => [config.slug, { isGlobal: true }]),
 )
 
 // slug → { features, tenantScoped } policy entries merged into tenantFeatureAccessPlugin's feature map.

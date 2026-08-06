@@ -1,11 +1,22 @@
 'use client'
-// Per-platform social connection panel on the Tenant edit form. Reads sanitized status (incl. the
+// Per-platform social connection panel in the consolidated Social connections settings view. Reads sanitized status (incl. the
 // platform label + availability) from /api/tenants/:id/social-status — NO label map is duplicated
 // here; every label/availability flag comes from the single platform catalogue via the server
 // response. Offers OAuth Connect (redirect, only for available platforms) / Disconnect, and shows the
-// last publish result. Rendered only when `socialPublishing` is visible and the doc exists.
+// last publish result.
 import React, { useEffect, useState } from 'react'
-import { useDocumentInfo, useConfig } from '@payloadcms/ui'
+import { Banner, Button, useConfig } from '@payloadcms/ui'
+
+const panelStack = { display: 'grid', gap: 'calc(var(--base) * 1.5)', margin: 0 } as const
+const compactStack = { display: 'grid', gap: 'calc(var(--base) * 0.75)' } as const
+const platformRow = {
+  alignItems: 'flex-start',
+  display: 'flex',
+  gap: 'calc(var(--base) * 2)',
+  justifyContent: 'space-between',
+  margin: 0,
+} as const
+const platformActions = { display: 'flex', flexShrink: 0, flexWrap: 'wrap', gap: 'calc(var(--base) * 0.75)' } as const
 
 type PlatformStatus = {
   platform: string
@@ -22,8 +33,11 @@ type PlatformStatus = {
   lastFailedArticleId: string
 }
 
-export default function SocialConnectionsPanel() {
-  const { id } = useDocumentInfo()
+type Props = {
+  tenantId: number | string
+}
+
+export default function SocialConnectionsPanel({ tenantId: id }: Props) {
   const { config } = useConfig()
   const apiBase = `${config?.serverURL ?? ''}${config?.routes?.api ?? '/api'}`
   const [platforms, setPlatforms] = useState<PlatformStatus[] | null>(null)
@@ -73,40 +87,44 @@ export default function SocialConnectionsPanel() {
   }
 
   return (
-    <div style={{ border: '1px solid var(--theme-elevation-150)', borderRadius: 4, padding: 16, marginTop: 24 }}>
-      <h4 style={{ margin: '0 0 8px' }}>Social connections</h4>
-      <p style={{ marginTop: 0 }}>
-        Connect each platform to enable auto-publishing. Inclusion is set in the “Included platforms” field.
-      </p>
-      {error && <p style={{ color: 'var(--theme-error-500)' }}>{error}</p>}
+    <section className="field-type group" style={panelStack}>
+      <div style={compactStack}>
+        <h2 style={{ margin: 0 }}>Platform integrations</h2>
+        <p style={{ margin: 0 }}>
+          Connect each platform to enable auto-publishing. Inclusion is set in the “Included platforms” field.
+        </p>
+      </div>
+      {error && <Banner type="error">{error}</Banner>}
       {!platforms && !error && <p>Loading…</p>}
       {platforms?.map((p) => (
-        <div key={p.platform} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderTop: '1px solid var(--theme-elevation-100)' }}>
+        <div className="field-type__wrap" key={p.platform} style={platformRow}>
           <div>
             <strong>{p.label}</strong>{p.remoteAccountLabel ? ` — ${p.remoteAccountLabel}` : ''}
-            <div style={{ fontSize: 12, opacity: 0.8 }}>
+            <p style={{ margin: 'calc(var(--base) * 0.5) 0 0' }}>
               {p.connected
                 ? `connected · last: ${p.lastPublishStatus || '—'}`
                 : p.available
                   ? `not connected${p.status === 'reconnect_required' ? ' (reconnect required)' : ''}`
                   : `not available${p.approvalNote ? ` — ${p.approvalNote}` : ''}`}
               {p.lastErrorCode ? ` · ${p.lastErrorCode}` : ''}
-            </div>
+            </p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {p.available && (p.connected ? (
+          {p.available && (
+            <div style={platformActions}>
+              {p.connected ? (
               <>
                 {p.lastPublishStatus === 'failed' && p.lastFailedArticleId ? (
-                  <button type="button" className="btn btn--style-secondary" onClick={() => retry(p.platform, p.lastFailedArticleId)}>Retry</button>
+                  <Button buttonStyle="secondary" onClick={() => retry(p.platform, p.lastFailedArticleId)} size="small" type="button">Retry</Button>
                 ) : null}
-                <button type="button" className="btn btn--style-secondary" onClick={() => disconnect(p.platform)}>Disconnect</button>
+                <Button buttonStyle="secondary" onClick={() => disconnect(p.platform)} size="small" type="button">Disconnect</Button>
               </>
             ) : (
-              <button type="button" className="btn" onClick={() => connect(p.platform)}>Connect</button>
-            ))}
-          </div>
+              <Button buttonStyle="primary" onClick={() => connect(p.platform)} size="small" type="button">Connect</Button>
+              )}
+            </div>
+          )}
         </div>
       ))}
-    </div>
+    </section>
   )
 }

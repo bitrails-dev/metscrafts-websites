@@ -4,16 +4,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useConfig } from '@payloadcms/ui'
 import { useRouter, useSearchParams } from 'next/navigation.js'
 import { useTenantSelection } from '@payloadcms/plugin-multi-tenant/client'
+import { DEFAULT_PLATFORM_LOCALE } from '../i18n/catalogue'
 
-// A super-admin has no tenant context until one is selected in the dashboard. English is the
-// safe platform fallback; once a tenant is selected, its published languages become authoritative.
-const PLATFORM_FALLBACK_LOCALE = 'en'
-
-type TenantResponse = { languages?: unknown }
+type TenantResponse = { languages?: unknown; defaultLanguage?: unknown }
 
 const validLocales = (value: unknown): string[] =>
   Array.isArray(value)
-    ? value.filter((locale): locale is string => typeof locale === 'string')
+    ? [...new Set(value.filter((locale): locale is string => typeof locale === 'string'))]
     : []
 
 const localeFromElement = (element: Element): string | null => {
@@ -39,16 +36,26 @@ export default function TenantLocaleGuard({ children }: { children?: React.React
   const { selectedTenantID } = useTenantSelection()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [allowedLocales, setAllowedLocales] = useState<string[]>([PLATFORM_FALLBACK_LOCALE])
+  const [allowedLocales, setAllowedLocales] = useState<string[]>([DEFAULT_PLATFORM_LOCALE])
+  const [tenantDefaultLocale, setTenantDefaultLocale] = useState<string>()
+  const [tenantLocaleMetadataReady, setTenantLocaleMetadataReady] = useState(
+    selectedTenantID === undefined,
+  )
   const requestID = useRef(0)
 
   useEffect(() => {
     const currentRequest = ++requestID.current
     if (selectedTenantID === undefined) {
-      setAllowedLocales([PLATFORM_FALLBACK_LOCALE])
+      setTenantLocaleMetadataReady(true)
+      setAllowedLocales([DEFAULT_PLATFORM_LOCALE])
+      setTenantDefaultLocale(undefined)
       return
     }
 
+    // Do not carry the previous tenant's locale set/default while the new tenant is loading.
+    setTenantLocaleMetadataReady(false)
+    setAllowedLocales([DEFAULT_PLATFORM_LOCALE])
+    setTenantDefaultLocale(undefined)
     const apiBase = `${config?.serverURL ?? ''}${config?.routes?.api ?? '/api'}`
     void fetch(`${apiBase}/tenants/${encodeURIComponent(String(selectedTenantID))}?depth=0`, {
       credentials: 'include',
@@ -57,11 +64,23 @@ export default function TenantLocaleGuard({ children }: { children?: React.React
       .then((tenant) => {
         if (currentRequest !== requestID.current) return
         const languages = validLocales(tenant?.languages)
-        setAllowedLocales(languages.length > 0 ? languages : [PLATFORM_FALLBACK_LOCALE])
+        const allowed = languages.length > 0 ? languages : [DEFAULT_PLATFORM_LOCALE]
+        const requestedDefault = typeof tenant?.defaultLanguage === 'string'
+          ? tenant.defaultLanguage
+          : undefined
+        setTenantLocaleMetadataReady(true)
+        setAllowedLocales(allowed)
+        setTenantDefaultLocale(
+          requestedDefault && allowed.includes(requestedDefault) ? requestedDefault : allowed[0],
+        )
       })
       .catch(() => {
-        // Keep the safe English fallback if the tenant metadata request fails.
-        if (currentRequest === requestID.current) setAllowedLocales([PLATFORM_FALLBACK_LOCALE])
+        // Keep the platform default if the tenant metadata request fails.
+        if (currentRequest === requestID.current) {
+          setTenantLocaleMetadataReady(true)
+          setAllowedLocales([DEFAULT_PLATFORM_LOCALE])
+          setTenantDefaultLocale(undefined)
+        }
       })
   }, [config?.routes?.api, config?.serverURL, selectedTenantID])
 
@@ -76,12 +95,36 @@ export default function TenantLocaleGuard({ children }: { children?: React.React
 
   useEffect(() => {
     const current = searchParams.get('locale')
-    if (!current || allowedLocales.includes(current) || allowedLocales.length === 0) return
+    if (allowedLocales.length === 0) return
+    if (selectedTenantID !== undefined && !tenantLocaleMetadataReady) return
+
+    const preferred = tenantDefaultLocale && allowedLocales.includes(tenantDefaultLocale)
+      ? tenantDefaultLocale
+      : allowedLocales[0]
+    if (!preferred) return
+
+    // A tenant's configured default is the initial content locale. Once an admin explicitly
+    // chooses a locale, preserve that choice as long as it remains enabled for the tenant.
+    if (!current) {
+      if (!tenantDefaultLocale || selectedTenantID === undefined) return
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('locale', preferred)
+      router.replace(`?${params.toString()}`)
+      return
+    }
+    if (allowedLocales.includes(current)) return
 
     const params = new URLSearchParams(searchParams.toString())
-    params.set('locale', allowedLocales[0])
+    params.set('locale', preferred)
     router.replace(`?${params.toString()}`)
-  }, [allowedLocales, router, searchParams])
+  }, [
+    allowedLocales,
+    router,
+    searchParams,
+    selectedTenantID,
+    tenantDefaultLocale,
+    tenantLocaleMetadataReady,
+  ])
 
   return <>{children}</>
 }

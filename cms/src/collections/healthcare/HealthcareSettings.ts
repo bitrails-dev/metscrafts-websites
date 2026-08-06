@@ -34,7 +34,9 @@ export const HealthcareSettings: CollectionConfig = {
     plural: { ar: 'إعدادات الرعاية الصحية', en: 'Healthcare settings' },
   },
   admin: {
-    group: { ar: 'الرعاية الصحية', en: 'Healthcare' },
+    // This is a tenant singleton, not healthcare content. Keep it with the other tenant settings;
+    // multiTenantPlugin's `isGlobal` wiring opens this collection directly in its edit/create form.
+    group: { ar: 'الإعدادات', en: 'Settings' },
     useAsTitle: 'tenant',
   },
   access: {

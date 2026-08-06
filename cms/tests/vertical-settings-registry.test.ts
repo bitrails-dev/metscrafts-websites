@@ -5,6 +5,7 @@ import {
   verticalSettingsCollections,
   verticalSettingsFeatureMap,
 } from '../src/verticals/registry'
+import { HealthcareSettings } from '../src/collections/healthcare/HealthcareSettings'
 
 test('every settings collection has a unique slug', () => {
   const slugs = VERTICAL_SETTINGS.map(({ config }) => config.slug)
@@ -21,11 +22,15 @@ test('the registry is exactly commerce-settings→commerce and healthcare-settin
   )
 })
 
-test('verticalSettingsCollections is the multi-tenant slug-keyed map', () => {
+test('vertical settings use multi-tenant singleton mode', () => {
   assert.deepEqual(verticalSettingsCollections, {
-    'commerce-settings': {},
-    'healthcare-settings': {},
+    'commerce-settings': { isGlobal: true },
+    'healthcare-settings': { isGlobal: true },
   })
+})
+
+test('healthcare settings appears in the Settings navigation group', () => {
+  assert.deepEqual(HealthcareSettings.admin?.group, { ar: 'الإعدادات', en: 'Settings' })
 })
 
 test('the feature map marks every settings collection tenant-scoped with its feature', () => {

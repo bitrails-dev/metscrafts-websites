@@ -28,6 +28,7 @@ import { seedTenant } from './helpers/commerce'
 import { makeTempDbPath, drizzleFrom } from './fixtures/throwaway-db'
 import type { DB } from './fixtures/legacy-seed'
 import { up, down, backfillTenantLanguages } from '../src/migrations/20260728_105552_tenant_languages'
+import { deduplicateTenantLanguages } from '../src/migrations/20260805_120000_deduplicate_tenant_languages'
 
 const TEMP_DB = makeTempDbPath('migration-tenant-languages')
 process.env.DATABASE_URI = `file:${TEMP_DB}`
@@ -139,6 +140,20 @@ test('T5: up creates schema + backfills every tenant; 2nd backfill is idempotent
   }
   const totalLangRowsAfterReBackfill = Number(((await db.run(sql`SELECT COUNT(*) AS v FROM tenants_languages;`)).rows[0] as { v: unknown }).v ?? 0)
   assert.equal(totalLangRowsAfterReBackfill, totalLangRowsAfterUp, '2nd backfill added zero rows (idempotent)')
+
+  // A legacy database can already contain duplicate join rows. The cleanup migration keeps one
+  // row per locale and restores the order values that the admin hasMany control expects.
+  await db.run(sql`
+    INSERT INTO tenants_languages (\`order\`, parent_id, value)
+    VALUES (20, ${seededIds[0]}, 'ar'), (21, ${seededIds[0]}, 'en');
+  `)
+  await deduplicateTenantLanguages(drizzleDb)
+  const cleaned = (await db.run(sql`
+    SELECT value, \"order\" AS ord FROM tenants_languages
+    WHERE parent_id = ${seededIds[0]} ORDER BY \"order\";
+  `)).rows as Array<{ value: string; ord: number }>
+  assert.deepEqual(cleaned, [{ value: 'ar', ord: 0 }, { value: 'en', ord: 1 }],
+    'duplicate tenant locales are cleaned and re-ordered')
 
   // ── 3. down() ONCE → clean ───────────────────────────────────────────────────────────────
   await down(downArgs)

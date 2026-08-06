@@ -73,13 +73,9 @@ export const validateTenantLanguages: CollectionBeforeChangeHook = ({ data, oper
   return data
 }
 
-// The eight public-feed social platforms. A tenant links a profile URL per platform under
-// `contact.social`, and may opt each platform into auto-publishing under `socialPublishing`.
-// WhatsApp is a contact channel only (no public feed), so it is NOT a publishing platform.
-// Keep these keys in sync with the frontend social normalizer (src/lib/tenant.ts).
-// Derived from the single platform catalogue (src/social/platforms.ts) so the contact.social URL
-// fields and the includedPlatforms select share one source of truth with the frontend normalizer
-// (src/lib/tenant.ts; parity asserted in tests). Keys intentionally stay in sync with it.
+// The eight public-feed social platforms. Their profile URLs and publishing controls are edited in
+// the dedicated Social connections settings screen; these keys remain exported for API/frontend
+// parity. WhatsApp is a contact channel only (no public feed), so it is not included.
 export const SOCIAL_PLATFORMS = PLATFORMS.map((p) => ({
   key: p.key,
   label: { ar: p.labelAr, en: p.label },
@@ -262,12 +258,13 @@ const tenantFields: Field[] = [
       { name: 'whatsapp', type: 'text', label: { ar: 'واتساب', en: 'WhatsApp' } },
       { name: 'email', type: 'email', label: { ar: 'البريد الإلكتروني', en: 'Email' } },
       { name: 'address', type: 'textarea', localized: true, label: { ar: 'العنوان', en: 'Address' } },
+      // Stored on the Tenant (the public site reads it there), but deliberately edited only from
+      // the consolidated Social connections screen rather than mixed into general contact details.
       {
         name: 'social',
         type: 'group',
         label: { ar: 'وسائل التواصل', en: 'Social' },
-        // One optional profile URL per platform. Empty is allowed; a non-empty value must be a
-        // valid http(s) URL. Existing facebook/x/youtube values keep their column names.
+        admin: { hidden: true },
         fields: SOCIAL_PLATFORMS.map(({ key, label }) => ({
           name: `${key}Url`,
           type: 'text' as const,
@@ -289,17 +286,13 @@ const tenantFields: Field[] = [
       },
     ],
   },
-  // Tenant-controlled social auto-publishing. Gated by the `socialPublishing` setting
-  // entitlement (a platform operator may withhold it). `enabled` is the master switch;
-  // `defaultAutoPublish` is the default applied to newly created Articles when they omit it;
-  // `includedPlatforms` selects which of the eight platforms each auto-published Article is sent
-  // to. WhatsApp is intentionally absent (contact channel, not a public feed). Per-platform
-  // OAuth connections live in a separate collection (Task E) and are joined in the publishing UI.
+  // Stored on the Tenant because Article publishing reads it here, but edited only in the
+  // Social connections screen along with profile links and provider integrations.
   {
     name: 'socialPublishing',
     type: 'group',
     label: { ar: 'النشر التلقائي على وسائل التواصل', en: 'Social auto-publishing' },
-    admin: { condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing') },
+    admin: { hidden: true },
     fields: [
       {
         name: 'enabled',
@@ -323,10 +316,6 @@ const tenantFields: Field[] = [
         hasMany: true,
         options: SOCIAL_PLATFORMS.map(({ key, label }) => ({ value: key, label })),
         label: { ar: 'المنصات المشمولة', en: 'Included platforms' },
-        admin: {
-          description:
-            'Platforms each auto-published Article is sent to. Connect each platform in the publishing panel (requires platform app configuration / approval).',
-        },
       },
     ],
   },
@@ -340,17 +329,6 @@ const tenantFields: Field[] = [
     admin: {
       components: { Field: '/src/admin/ResetTenantFeatures#default' },
       condition: (_data, _sibling, { user }) => isSuperAdmin(user as UserLike | null),
-    },
-  },
-  // Social connection panel: per-platform Connect/Disconnect + last result. Shown only when the
-  // socialPublishing group is visible (super-admin or entitled tenant admin), on existing docs.
-  {
-    name: 'socialConnections',
-    type: 'ui',
-    label: { ar: 'اتصالات التواصل', en: 'Social connections' },
-    admin: {
-      components: { Field: '/src/admin/SocialConnectionsPanel#default' },
-      condition: (data, _sibling, { user }) => groupIsVisible(data, user, 'socialPublishing'),
     },
   },
 ]

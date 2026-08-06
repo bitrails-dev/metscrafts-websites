@@ -5,6 +5,7 @@ public site reads **live over REST**. Arabic-default, RTL-first, with a patient 
 
 ## Start here
 - `../CLAUDE.md` — repo overview, stack, commands, conventions (the canonical quick reference).
+- `APP-FLOWCHART.md` — holistic Mermaid map of the public site, storefront, CMS, social publishing, payments, persistence, and container runtime.
 - `CMS-ARCHITECTURE.md` — CMS ↔ Astro data flow, multi-tenancy, collections, social publishing.
 - `DEPLOYMENT.md` — hosting, migrations, the social-publishing worker, rollback.
 - `superpowers/plans/2026-07-16-reviewer-summary.md` — current implementation status + open gates.

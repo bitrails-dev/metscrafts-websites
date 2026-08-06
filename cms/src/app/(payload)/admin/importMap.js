@@ -1,11 +1,11 @@
 import { default as default_1e18f0a27adaaaa2b38cd0539a48a6a4 } from '../../../../src/admin/ApplyTypeTemplate'
 import { default as default_ff6cb6d79efa010562c1d7faaf093f80 } from '../../../../src/admin/TenantDefaultLanguageField'
 import { default as default_a73e2fdf9a4791b27024184de18ac534 } from '../../../../src/admin/ResetTenantFeatures'
-import { default as default_e99d0aed9dfc890bd50df9ea9a4ebf2f } from '../../../../src/admin/SocialConnectionsPanel'
 import { WatchTenantCollection as WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
 import { TenantField as TenantField_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
 import { AssignTenantFieldTrigger as AssignTenantFieldTrigger_1d0591e3cf4f332c83a86da13a0de59a } from '@payloadcms/plugin-multi-tenant/client'
 import { default as default_996f3a91a32e18b341f32213d643a963 } from '../../../../src/admin/CategoryDeletePanel'
+import { default as default_b0cccf1e5e9d1e133fbff177e8f08cff } from '../../../../src/admin/ArticleSlugField'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -29,12 +29,14 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_a282fe5ae1c212df12321f24acebb9b6 } from '../../../../src/admin/SocialConnectionsSettingsView'
 import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { default as default_7d8303051d68365404c3a3ef3adc496b } from '../../../../src/admin/LogoutNavLink'
 import { default as default_efaea7663e7439e0e5631f7c313a6db0 } from '../../../../src/admin/BitrailsIcon'
 import { default as default_eaaa06110d67e94b11812e344977323b } from '../../../../src/admin/BitrailsLogo'
+import { GlobalViewRedirect as GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { default as default_1615d210c2544c5b192ded1d1e07144f } from '../../../../src/admin/InlineCreateDismissalProvider'
 import { TenantSelectionProvider as TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
@@ -46,11 +48,11 @@ export const importMap = {
   "/src/admin/ApplyTypeTemplate#default": default_1e18f0a27adaaaa2b38cd0539a48a6a4,
   "/src/admin/TenantDefaultLanguageField#default": default_ff6cb6d79efa010562c1d7faaf093f80,
   "/src/admin/ResetTenantFeatures#default": default_a73e2fdf9a4791b27024184de18ac534,
-  "/src/admin/SocialConnectionsPanel#default": default_e99d0aed9dfc890bd50df9ea9a4ebf2f,
   "@payloadcms/plugin-multi-tenant/client#WatchTenantCollection": WatchTenantCollection_1d0591e3cf4f332c83a86da13a0de59a,
   "@payloadcms/plugin-multi-tenant/client#TenantField": TenantField_1d0591e3cf4f332c83a86da13a0de59a,
   "@payloadcms/plugin-multi-tenant/client#AssignTenantFieldTrigger": AssignTenantFieldTrigger_1d0591e3cf4f332c83a86da13a0de59a,
   "/src/admin/CategoryDeletePanel#default": default_996f3a91a32e18b341f32213d643a963,
+  "/src/admin/ArticleSlugField#default": default_b0cccf1e5e9d1e133fbff177e8f08cff,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -74,12 +76,14 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/src/admin/SocialConnectionsSettingsView#default": default_a282fe5ae1c212df12321f24acebb9b6,
   "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
   "/src/admin/LogoutNavLink#default": default_7d8303051d68365404c3a3ef3adc496b,
   "/src/admin/BitrailsIcon#default": default_efaea7663e7439e0e5631f7c313a6db0,
   "/src/admin/BitrailsLogo#default": default_eaaa06110d67e94b11812e344977323b,
+  "@payloadcms/plugin-multi-tenant/rsc#GlobalViewRedirect": GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
   "/src/admin/InlineCreateDismissalProvider#default": default_1615d210c2544c5b192ded1d1e07144f,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelectionProvider": TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62,

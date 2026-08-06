@@ -55,7 +55,8 @@ export const CommerceSettings: CollectionConfig = {
     plural: { ar: 'إعدادات المتجر', en: 'Commerce settings' },
   },
   admin: {
-    group: { ar: 'المتجر', en: 'Commerce' },
+    // A tenant-global settings document, not a commerce collection list.
+    group: { ar: 'الإعدادات', en: 'Settings' },
     useAsTitle: 'status',
     defaultColumns: ['status', 'currency', 'taxMode', 'sandbox'],
   },

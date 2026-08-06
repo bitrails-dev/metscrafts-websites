@@ -32,6 +32,7 @@ import * as migration_20260727_130000_add_and_backfill_healthcare_settings from 
 import * as migration_20260727_130100_drop_healthcare_fields_from_tenants from './20260727_130100_drop_healthcare_fields_from_tenants';
 import * as migration_20260728_105552_tenant_languages from './20260728_105552_tenant_languages';
 import * as migration_20260729_140000_hero_value_to_number from './20260729_140000_hero_value_to_number';
+import * as migration_20260805_120000_deduplicate_tenant_languages from './20260805_120000_deduplicate_tenant_languages';
 
 export const migrations = [
   {
@@ -203,5 +204,10 @@ export const migrations = [
     up: migration_20260729_140000_hero_value_to_number.up,
     down: migration_20260729_140000_hero_value_to_number.down,
     name: '20260729_140000_hero_value_to_number',
+  },
+  {
+    up: migration_20260805_120000_deduplicate_tenant_languages.up,
+    down: migration_20260805_120000_deduplicate_tenant_languages.down,
+    name: '20260805_120000_deduplicate_tenant_languages',
   },
 ];

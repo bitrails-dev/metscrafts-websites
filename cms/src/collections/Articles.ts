@@ -1,5 +1,6 @@
 import type { Block, CollectionConfig } from 'payload'
 import { defaultAutoPublishFromTenant, queueSocialPublish } from '../social/hook'
+import { generateArticleSlugOnCreate } from './articleSlug'
 
 // Article body is composed of ordered blocks. Structure/order is shared across locales;
 // text fields inside each block are localized (ar default + en).
@@ -77,16 +78,19 @@ export const Articles: CollectionConfig = {
   hooks: {
     // `autoPublish` defaults from the tenant on create when omitted; the afterChange hook fans out
     // the social publish (create-only, non-blocking, fully isolated — never affects the save).
-    beforeChange: [defaultAutoPublishFromTenant],
+    beforeChange: [generateArticleSlugOnCreate, defaultAutoPublishFromTenant],
     afterChange: [queueSocialPublish],
   },
   fields: [
     { name: 'slug', type: 'text', required: true, unique: true,
       label: { ar: 'المعرّف', en: 'Slug' },
-      admin: { description: 'Markdown filename. Lowercase, hyphenated.' } },
+      admin: {
+        description: 'Generated from the preferred title and date until you edit it manually.',
+        components: { Field: '/src/admin/ArticleSlugField#default' },
+      } },
     { name: 'title', type: 'text', required: true, localized: true,
       label: { ar: 'العنوان', en: 'Title' } },
-    { name: 'date', type: 'date', required: true,
+    { name: 'date', type: 'date', required: true, defaultValue: () => new Date().toISOString(),
       label: { ar: 'التاريخ', en: 'Date' } },
     { name: 'author', type: 'text', required: true,
       label: { ar: 'الكاتب', en: 'Author' } },

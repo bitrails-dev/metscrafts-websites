@@ -35,12 +35,17 @@ export const SocialConnections: CollectionConfig = {
     plural: { ar: 'اتصالات التواصل الاجتماعي', en: 'Social connections' },
   },
   admin: {
-    // Visible in the admin nav to super-admins and tenant admins only. The token blob is never
-    // exposed (field-level lock + hidden below) and rows are scoped to the admin's own tenants.
+    // Visible in the admin nav to super-admins and tenant admins only. Its list view is replaced
+    // with one tenant-level social settings screen; individual connection records stay internal.
     hidden: ({ user }) => !isUserManager(user as UserLike | null),
     useAsTitle: 'platform',
     defaultColumns: ['platform', 'remoteAccountLabel', 'status', 'lastPublishStatus'],
     group: { ar: 'الإعدادات', en: 'Settings' },
+    components: {
+      views: {
+        list: { Component: '/src/admin/SocialConnectionsSettingsView#default' },
+      },
+    },
   },
   access: {
     // Scoped to the connection's tenant (see scopedAccess). Internal mutation paths use overrideAccess.

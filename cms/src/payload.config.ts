@@ -191,10 +191,9 @@ export default buildConfig({
   editor: lexicalEditor(),
   i18n: {
     supportedLanguages: ADMIN_TRANSLATIONS,
-    // A super-admin has no tenant from which to derive an admin language. Keep the platform
-    // account experience English by default; localized content still follows the selected tenant
-    // through enforceTenantLocales.
-    fallbackLanguage: 'en',
+    // A super-admin has no tenant from which to derive an admin language. Use the Arabic-first
+    // platform default; localized content follows the selected tenant through the locale guard.
+    fallbackLanguage: DEFAULT_PLATFORM_LOCALE,
   },
   localization: {
     locales: PLATFORM_LOCALES.map((l) => ({ code: l.value, label: l.native })),

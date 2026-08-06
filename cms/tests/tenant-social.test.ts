@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { Tenants, SOCIAL_PLATFORMS } from '../src/collections/Tenants'
+import { SocialConnections } from '../src/collections/SocialConnections'
 import { enforceTenantSettingsEntitlement } from '../src/access/tenantSettings'
 
 type HookArgs = Parameters<typeof enforceTenantSettingsEntitlement>[0]
@@ -139,11 +140,13 @@ test('a super-admin bypasses the socialPublishing entitlement regardless of gran
   )
 })
 
-test('the socialPublishing group is visible only when entitled (or super-admin)', () => {
-  const sp = findField('socialPublishing') as { admin?: { condition?: (d: unknown, s: unknown, c: { user: unknown }) => boolean } } | undefined
-  const condition = sp?.admin?.condition
-  if (typeof condition !== 'function') throw new TypeError('socialPublishing.admin.condition must be a function')
-  assert.equal(condition({ settingsEntitlement: ['socialPublishing'] }, undefined, { user: tenantAdmin() }), true)
-  assert.equal(condition({ settingsEntitlement: ['contact'] }, undefined, { user: tenantAdmin() }), false)
-  assert.equal(condition({ settingsEntitlement: [] }, undefined, { user: superAdmin }), true)
+test('social fields are hidden on the general tenant form and edited from Social connections', () => {
+  const sp = findField('socialPublishing') as { admin?: { hidden?: boolean } } | undefined
+  assert.equal(sp?.admin?.hidden, true)
+
+  const contact = findField('contact') as { fields?: Array<{ name?: string; admin?: { hidden?: boolean } }> } | undefined
+  assert.equal(contact?.fields?.find((field) => field.name === 'social')?.admin?.hidden, true)
+
+  const listView = SocialConnections.admin?.components?.views?.list as { Component?: string } | undefined
+  assert.equal(listView?.Component, '/src/admin/SocialConnectionsSettingsView#default')
 })
