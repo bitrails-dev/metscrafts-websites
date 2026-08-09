@@ -38,6 +38,13 @@ npm run import     # reads ../src/content/*.md → creates Payload docs (AR defa
 2. `npm run export` — writes `../src/content/*.md`.
 3. From the repo root: `git add src/content && git commit && git push` → Astro rebuilds.
 
+## Social auto-publishing setup
+
+Before using **Connect** in the Social connections admin screen, create and configure the provider
+developer apps. The complete provider-by-provider instructions, callback URLs, scopes, review
+requirements, environment-variable mapping, and test checklist are in
+[docs/social-oauth-provider-setup.md](docs/social-oauth-provider-setup.md).
+
 ## Local libSQL (no cloud)
 
 The DB stays on your machine. Two ways:
